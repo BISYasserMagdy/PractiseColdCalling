@@ -1,5 +1,5 @@
 // Vercel Serverless Function — keeps the Gemini key on the server.
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 const BASE = `You are role-playing a real person who just answered a phone call from a real estate agent who is cold calling you. You are in the USA or Canada. You are NOT an assistant and never say you are an AI.
 Rules: speak like a real person on the phone: 1-2 short sentences per turn, casual, natural fillers sometimes. Never help the caller or coach them during the call. React realistically to what they actually say: reward good rapport and good questions with a little more openness; punish pushy, scripted or vague pitches with resistance. Never agree to a meeting too easily. If the caller is rude or you're fully done, say goodbye and end with the token [HANGUP]. Output only your spoken words.`;
@@ -46,16 +46,23 @@ export default async function handler(req, res) {
     temperature = 1;
   }
 
-  const models = [MODEL, process.env.GEMINI_FALLBACK].filter(Boolean);
+  // Neutral message list (used for Groq fallback)
+  const chatMsgs = [{ role: "system", content: system }].concat(
+    contents.map(c => ({ role: c.role === "model" ? "assistant" : "user", content: c.parts[0].text }))
+  );
+  const maxTokens = mode === "feedback" ? 2000 : 500;
+
+  const models = [MODEL, ...(process.env.GEMINI_FALLBACK || "").split(",").map(x => x.trim())].filter(Boolean);
   const payload = JSON.stringify({
     systemInstruction: { parts: [{ text: system }] },
     contents,
-    generationConfig: { temperature, maxOutputTokens: mode === "feedback" ? 2000 : 500 },
+    generationConfig: { temperature, maxOutputTokens: maxTokens },
   });
 
-  let lastError = "Gemini error", status = 500;
-  for (let i = 0; i < 3; i++) {
-    const model = models[i % models.length];
+  let lastError = "AI error", status = 500;
+
+  // 1) Gemini models (one attempt each, no retry on quota errors)
+  for (const model of models) {
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",
@@ -65,7 +72,7 @@ export default async function handler(req, res) {
       const data = await r.json();
       if (r.ok) {
         const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-        return res.status(200).json({ text });
+        if (text) return res.status(200).json({ text });
       }
       lastError = data?.error?.message || lastError;
       status = r.status;
@@ -73,7 +80,32 @@ export default async function handler(req, res) {
     } catch (e) {
       lastError = String(e);
     }
-    await new Promise(r => setTimeout(r, 700 * (i + 1)));
   }
+
+  // 2) Groq fallback (OpenAI-compatible)
+  const gkey = process.env.GROQ_API_KEY;
+  if (gkey) {
+    const gModels = [process.env.GROQ_MODEL || "llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    for (const gm of gModels) {
+      try {
+        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${gkey}` },
+          body: JSON.stringify({ model: gm, messages: chatMsgs, temperature, max_tokens: maxTokens }),
+        });
+        const data = await r.json();
+        if (r.ok) {
+          const text = (data.choices?.[0]?.message?.content || "").trim();
+          if (text) return res.status(200).json({ text });
+        }
+        lastError = data?.error?.message || lastError;
+        status = r.status;
+      } catch (e) {
+        lastError = String(e);
+      }
+    }
+  }
+
+  if (status === 429) lastError = "Too many requests right now. Wait a minute and try again.";
   res.status(status).json({ error: lastError });
 }
