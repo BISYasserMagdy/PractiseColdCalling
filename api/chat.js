@@ -50,7 +50,7 @@ export default async function handler(req, res) {
   const payload = JSON.stringify({
     systemInstruction: { parts: [{ text: system }] },
     contents,
-    generationConfig: { temperature, maxOutputTokens: mode === "feedback" ? 900 : 120, thinkingConfig: { thinkingBudget: 0 } },
+    generationConfig: { temperature, maxOutputTokens: mode === "feedback" ? 2000 : 500 },
   });
 
   let lastError = "Gemini error", status = 500;
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       }
       lastError = data?.error?.message || lastError;
       status = r.status;
-      if (![429, 500, 503].includes(r.status)) break;
+      if ([401, 403].includes(r.status)) break;
     } catch (e) {
       lastError = String(e);
     }
