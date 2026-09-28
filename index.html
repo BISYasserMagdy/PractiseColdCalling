@@ -46,6 +46,13 @@ input[type=text]{flex:1;padding:12px;border:1px solid var(--line);border-radius:
 #fb{display:none;white-space:pre-wrap;line-height:1.5;margin-top:16px}
 .install{display:none;width:100%;margin-top:10px;background:#16202b;color:#fff}
 .hint{display:none;margin-top:10px;color:var(--mute);font-size:14px;line-height:1.4}
+.item{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:#f6f8fa;border:1px solid var(--line);margin-bottom:8px;gap:8px}
+.item small{display:block;color:var(--mute);font-weight:400}
+.score{font-weight:800;font-size:18px;white-space:nowrap}
+#hist{display:none}
+.tr{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+h3{margin:16px 0 6px;font-size:16px}
+.txt{white-space:pre-wrap;line-height:1.5}
 .warn{background:#fff3cd;border:1px solid #e6cf85;padding:10px;border-radius:10px;margin-bottom:14px;display:none}
 </style>
 </head>
@@ -73,6 +80,7 @@ input[type=text]{flex:1;padding:12px;border:1px solid var(--line);border-radius:
       <option value="hard">Hard</option>
     </select>
     <button class="go" id="start">Start call</button>
+    <button class="ghost" id="histOpen" style="width:100%;margin-top:10px">History</button>
     <button class="install" id="install">Install as app</button>
     <div class="hint" id="iosHint">To install on iPhone: tap Share, then "Add to Home Screen".</div>
   </section>
@@ -94,7 +102,20 @@ input[type=text]{flex:1;padding:12px;border:1px solid var(--line);border-radius:
   </section>
 
   <section class="card" id="fb"></section>
-  <div class="row" id="again" style="display:none"><button class="go" onclick="location.reload()">New call</button></div>
+  <div class="row" id="again" style="display:none">
+    <button class="ghost" id="retry" style="display:none">Retry feedback</button>
+    <button class="ghost" id="histOpen2">History</button>
+    <button class="go" style="flex:1" onclick="location.reload()">New call</button>
+  </div>
+
+  <section class="card" id="hist">
+    <div class="bar">
+      <button class="ghost" id="hBack">Back</button>
+      <button class="ghost" id="hClear">Clear all</button>
+    </div>
+    <div id="hlist"></div>
+    <div id="hdet" style="display:none"></div>
+  </section>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -180,14 +201,86 @@ $("mic").onclick = () => {
 };
 $("hang").onclick = endCall;
 
+// ---- History (stored on this device only) ----
+const HKEY = "cc_history_v1";
+const LEVELS = {easy:"Easy", medium:"Medium", hard:"Hard"};
+let curRec = null;
+function loadH(){ try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch { return []; } }
+function saveH(a){ try { localStorage.setItem(HKEY, JSON.stringify(a.slice(0, 50))); } catch {} }
+function upsert(rec){ const a = loadH(), i = a.findIndex(x => x.id === rec.id); if (i >= 0) a[i] = rec; else a.unshift(rec); saveH(a); }
+function scoreOf(t){ const m = /Score:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i.exec(t || ""); return m ? m[1] + "/10" : "—"; }
+function fmtDur(s){ return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0"); }
+function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+async function getFeedback(){
+  $("retry").style.display = "none"; $("fb").textContent = "Analyzing your call…";
+  try {
+    const t = await api({mode:"feedback", persona: curRec.persona, level: curRec.level, messages: curRec.msgs});
+    curRec.feedback = t; upsert(curRec); $("fb").textContent = t;
+  } catch (e) {
+    $("fb").textContent = "Couldn't get feedback: " + e.message + "\nThe call was saved to History.";
+    $("retry").style.display = "";
+  }
+}
+$("retry").onclick = getFeedback;
+
 async function endCall(){
   if (ended) return; ended = true; stopRec(); speechSynthesis.cancel(); clearInterval(tick);
   $("call").style.display = "none"; $("fb").style.display = "block"; $("again").style.display = "flex";
   if (msgs.filter(m => !m.hidden && m.role === "user").length < 1) { $("fb").textContent = "Call ended before you said anything."; return; }
-  $("fb").textContent = "Analyzing your call…";
-  try { $("fb").textContent = await api({mode:"feedback", persona, level, messages: msgs}); }
-  catch (e) { $("fb").textContent = "Couldn't get feedback: " + e.message; }
+  curRec = {id: Date.now(), ts: Date.now(), persona, level, dur: Math.floor((Date.now() - t0) / 1000), msgs, feedback: null};
+  upsert(curRec);
+  await getFeedback();
 }
+
+function showHistory(){
+  ["setup","call","fb","again"].forEach(id => $(id).style.display = "none");
+  $("hist").style.display = "block"; renderList();
+}
+function renderList(){
+  $("hdet").style.display = "none"; $("hlist").style.display = "block"; $("hClear").style.display = "";
+  const box = $("hlist"); box.textContent = "";
+  const a = loadH();
+  if (!a.length) { box.appendChild(el("p", "sub", "No calls yet. Your finished calls will show up here.")); return; }
+  a.forEach(rec => {
+    const b = el("button", "item");
+    const l = el("div"); l.appendChild(document.createTextNode(NAMES[rec.persona] + " · " + LEVELS[rec.level]));
+    l.appendChild(el("small", "", new Date(rec.ts).toLocaleString() + " · " + fmtDur(rec.dur)));
+    b.appendChild(l); b.appendChild(el("div", "score", scoreOf(rec.feedback)));
+    b.onclick = () => renderDetail(rec.id);
+    box.appendChild(b);
+  });
+}
+function renderDetail(id){
+  const rec = loadH().find(x => x.id === id); if (!rec) return renderList();
+  $("hlist").style.display = "none"; $("hClear").style.display = "none";
+  const d = $("hdet"); d.style.display = "block"; d.textContent = "";
+  const back = el("button", "ghost", "← All calls"); back.onclick = renderList; d.appendChild(back);
+  d.appendChild(el("h3", "", NAMES[rec.persona] + " (" + LEVELS[rec.level] + ") · " + scoreOf(rec.feedback)));
+  d.appendChild(el("div", "sub", new Date(rec.ts).toLocaleString() + " · " + fmtDur(rec.dur)));
+  d.appendChild(el("h3", "", "Feedback"));
+  const fb = el("div", "txt", rec.feedback || "No feedback saved for this call."); d.appendChild(fb);
+  if (!rec.feedback) {
+    const r = el("button", "ghost", "Get feedback"); r.style.marginTop = "8px";
+    r.onclick = async () => {
+      fb.textContent = "Analyzing your call…"; r.disabled = true;
+      try { rec.feedback = await api({mode:"feedback", persona: rec.persona, level: rec.level, messages: rec.msgs}); upsert(rec); renderDetail(rec.id); }
+      catch (e) { fb.textContent = "Couldn't get feedback: " + e.message; r.disabled = false; }
+    };
+    d.appendChild(r);
+  }
+  d.appendChild(el("h3", "", "Transcript"));
+  const tr = el("div", "tr");
+  rec.msgs.filter(m => !m.hidden).forEach(m => tr.appendChild(el("div", "m " + (m.role === "user" ? "u" : "c"), m.text)));
+  d.appendChild(tr);
+  const del = el("button", "end", "Delete this call"); del.style.marginTop = "16px";
+  del.onclick = () => { if (confirm("Delete this call?")) { saveH(loadH().filter(x => x.id !== rec.id)); renderList(); } };
+  d.appendChild(del);
+}
+$("histOpen").onclick = showHistory;
+$("histOpen2").onclick = showHistory;
+$("hBack").onclick = () => location.reload();
+$("hClear").onclick = () => { if (confirm("Delete all saved calls?")) { saveH([]); renderList(); } };
 
 // ---- PWA: service worker + install button ----
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

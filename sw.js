@@ -1,5 +1,5 @@
 // Minimal service worker: caches the app shell, never touches /api/.
-const CACHE = "coldcall-v1";
+const CACHE = "coldcall-v2";
 const SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", e => {
