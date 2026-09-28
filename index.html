@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cold Call Practice</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1f8a5b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cold Call">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -37,6 +44,8 @@ input[type=text]{flex:1;padding:12px;border:1px solid var(--line);border-radius:
 @media(prefers-reduced-motion:reduce){.dot.on{animation:none}}
 @keyframes p{50%{opacity:.35}}
 #fb{display:none;white-space:pre-wrap;line-height:1.5;margin-top:16px}
+.install{display:none;width:100%;margin-top:10px;background:#16202b;color:#fff}
+.hint{display:none;margin-top:10px;color:var(--mute);font-size:14px;line-height:1.4}
 .warn{background:#fff3cd;border:1px solid #e6cf85;padding:10px;border-radius:10px;margin-bottom:14px;display:none}
 </style>
 </head>
@@ -64,6 +73,8 @@ input[type=text]{flex:1;padding:12px;border:1px solid var(--line);border-radius:
       <option value="hard">Hard</option>
     </select>
     <button class="go" id="start">Start call</button>
+    <button class="install" id="install">Install as app</button>
+    <div class="hint" id="iosHint">To install on iPhone: tap Share, then "Add to Home Screen".</div>
   </section>
 
   <section class="card" id="call">
@@ -177,6 +188,23 @@ async function endCall(){
   try { $("fb").textContent = await api({mode:"feedback", persona, level, messages: msgs}); }
   catch (e) { $("fb").textContent = "Couldn't get feedback: " + e.message; }
 }
+
+// ---- PWA: service worker + install button ----
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+let deferredPrompt = null;
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); deferredPrompt = e;
+  if (!standalone) $("install").style.display = "block";
+});
+$("install").onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null; $("install").style.display = "none";
+};
+window.addEventListener("appinstalled", () => { $("install").style.display = "none"; });
+if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) $("iosHint").style.display = "block";
 </script>
 </body>
 </html>
