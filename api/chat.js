@@ -82,16 +82,32 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2) Groq fallback (OpenAI-compatible)
-  const gkey = process.env.GROQ_API_KEY;
-  if (gkey) {
-    const gModels = [process.env.GROQ_MODEL || "openai/gpt-oss-120b", "openai/gpt-oss-20b"];
-    for (const gm of gModels) {
+  // 2) OpenAI-compatible fallbacks, tried in order: Groq, then OpenRouter
+  const providers = [
+    {
+      key: process.env.GROQ_API_KEY,
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      models: [process.env.GROQ_MODEL || "openai/gpt-oss-120b", "openai/gpt-oss-20b"],
+      extra: { reasoning_effort: "low" },
+      tokens: maxTokens + 1000,
+    },
+    {
+      key: process.env.OPENROUTER_API_KEY,
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      models: [process.env.OPENROUTER_MODEL || "openrouter/free"],
+      extra: {},
+      tokens: maxTokens + 500,
+    },
+  ];
+
+  for (const p of providers) {
+    if (!p.key) continue;
+    for (const m of p.models) {
       try {
-        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const r = await fetch(p.url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${gkey}` },
-          body: JSON.stringify({ model: gm, messages: chatMsgs, temperature, max_completion_tokens: maxTokens + 1000, reasoning_effort: "low" }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${p.key}` },
+          body: JSON.stringify({ model: m, messages: chatMsgs, temperature, max_tokens: p.tokens, ...p.extra }),
         });
         const data = await r.json();
         if (r.ok) {
