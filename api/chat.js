@@ -85,13 +85,13 @@ export default async function handler(req, res) {
   // 2) Groq fallback (OpenAI-compatible)
   const gkey = process.env.GROQ_API_KEY;
   if (gkey) {
-    const gModels = [process.env.GROQ_MODEL || "llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    const gModels = [process.env.GROQ_MODEL || "openai/gpt-oss-120b", "openai/gpt-oss-20b"];
     for (const gm of gModels) {
       try {
         const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${gkey}` },
-          body: JSON.stringify({ model: gm, messages: chatMsgs, temperature, max_tokens: maxTokens }),
+          body: JSON.stringify({ model: gm, messages: chatMsgs, temperature, max_completion_tokens: maxTokens + 1000, reasoning_effort: "low" }),
         });
         const data = await r.json();
         if (r.ok) {
