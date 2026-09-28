@@ -46,21 +46,34 @@ export default async function handler(req, res) {
     temperature = 1;
   }
 
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents,
-        generationConfig: { temperature, maxOutputTokens: mode === "feedback" ? 900 : 120, thinkingConfig: { thinkingBudget: 0 } },
-      }),
-    });
-    const data = await r.json();
-    if (!r.ok) return res.status(r.status).json({ error: data?.error?.message || "Gemini error" });
-    const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-    res.status(200).json({ text });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
+  const models = [MODEL, process.env.GEMINI_FALLBACK].filter(Boolean);
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents,
+    generationConfig: { temperature, maxOutputTokens: mode === "feedback" ? 900 : 120, thinkingConfig: { thinkingBudget: 0 } },
+  });
+
+  let lastError = "Gemini error", status = 500;
+  for (let i = 0; i < 3; i++) {
+    const model = models[i % models.length];
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: payload,
+      });
+      const data = await r.json();
+      if (r.ok) {
+        const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+        return res.status(200).json({ text });
+      }
+      lastError = data?.error?.message || lastError;
+      status = r.status;
+      if (![429, 500, 503].includes(r.status)) break;
+    } catch (e) {
+      lastError = String(e);
+    }
+    await new Promise(r => setTimeout(r, 700 * (i + 1)));
   }
+  res.status(status).json({ error: lastError });
 }
