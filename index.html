@@ -663,7 +663,9 @@ function shareBar(rec){
   const bar = el("div","row"), msg = el("div","sub","");
   const mk = (t, f) => { const b = el("button","ghost",t); b.onclick = f; bar.appendChild(b); };
   mk("Share link", async () => {
-    try { const url = location.origin + "/#share=" + await packRec(rec);
+    try { const packed = await packRec(rec); let url = "";
+      try { const r = await fetch("/api/share", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({d: packed})}); const j = await r.json(); if (r.ok && j.id) url = location.origin + "/#s=" + j.id; } catch {}
+      if (!url) url = location.origin + "/#share=" + packed;
       if (navigator.share) { try { await navigator.share({title:"Cold call practice", text:"My cold call practice and feedback", url}); return; } catch (e) { if (e.name === "AbortError") return; } }
       msg.textContent = (await copyText(url)) ? "Link copied. Anyone with it can read this call (no account needed)." : "Couldn't copy. Use Copy text instead.";
     } catch (e) { msg.textContent = "Couldn't create link: " + e.message; }
@@ -673,14 +675,16 @@ function shareBar(rec){
   const w = el("div"); w.appendChild(bar); w.appendChild(msg); return w;
 }
 async function openShared(){
-  const m = location.hash.match(/^#share=(.+)$/); if (!m) return;
+  const m = location.hash.match(/^#(share|s)=([A-Za-z0-9_-]+)$/); if (!m) return;
   try {
-    const rec = await unpackRec(m[1]);
+    let packed = m[2];
+    if (m[1] === "s") { const r = await fetch("/api/share?id=" + encodeURIComponent(m[2])); const j = await r.json(); if (!r.ok) throw new Error(j.error || "not found"); packed = j.d; }
+    const rec = await unpackRec(packed);
     ["setup","call","fb","again"].forEach(id => $(id).style.display = "none");
     $("hist").style.display = "block"; $("hlist").style.display = "none"; $("hClear").style.display = "none";
     $("hBack").textContent = "Open practice app"; $("hBack").onclick = () => { location.href = location.pathname; };
     renderDetail(0, rec);
-  } catch { alert("This shared link is invalid or incomplete."); }
+  } catch (e) { alert("Couldn't open this shared link: " + (e.message || "invalid or incomplete")); }
 }
 function renderDetail(id, shared){
   const rec = shared || loadH().find(x => x.id === id); if (!rec) return renderList();
