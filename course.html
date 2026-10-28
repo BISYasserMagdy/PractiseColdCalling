@@ -17,9 +17,15 @@ button.go{background:var(--go);color:#fff}button:disabled{opacity:.5;cursor:defa
 .wrap{max-width:1000px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:860px){.wrap{grid-template-columns:260px 1fr}}
 nav{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;align-self:start}
-nav button{display:flex;gap:8px;width:100%;text-align:left;background:none;padding:8px;font-weight:500;font-size:14px;align-items:flex-start}
+nav{direction:rtl}
+nav button{display:flex;gap:8px;width:100%;direction:rtl;text-align:right;unicode-bidi:plaintext;background:none;padding:8px;font-weight:500;font-size:14px;align-items:flex-start}
 nav button.on{background:#e8f4ec;font-weight:700}
-nav .ck{width:18px;flex:none;color:var(--go)}
+nav .ck{width:16px;flex:none;color:var(--go)}
+nav .n{flex:none;min-width:22px;font-weight:700;color:var(--mute);direction:ltr;text-align:center}
+nav .tx{flex:1;direction:rtl;text-align:right}
+article h2{direction:rtl;text-align:right}
+.tag{direction:rtl;text-align:right}
+header h1{direction:rtl;text-align:right}
 .bar{height:8px;background:#e3e8ed;border-radius:6px;overflow:hidden;margin:6px 0 10px}.bar i{display:block;height:100%;background:var(--go);width:0}
 article{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
 article h2{margin:0 0 4px;font-size:24px}
@@ -30,10 +36,11 @@ article h2{margin:0 0 4px;font-size:24px}
 .en b{color:#2a5f9e}
 .tip{background:#fff3cd;border:1px solid #e6cf85;border-radius:10px;padding:10px 14px;margin:12px 0}
 .task{background:#e8f4ec;border:1px solid #9ccdb1;border-radius:10px;padding:10px 14px;margin:14px 0}
-.quiz{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:16px 0;direction:ltr;text-align:left}
-.opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);margin:6px 0;font-weight:400}
+.quiz{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:16px 0;direction:rtl;text-align:right}
+.quiz>b{display:block;unicode-bidi:plaintext;text-align:start}
+.opt{display:block;width:100%;unicode-bidi:plaintext;text-align:start;background:#fff;border:1px solid var(--line);margin:6px 0;font-weight:400}
 .opt.ok{background:#d9f2e3;border-color:var(--go)}.opt.no{background:#f8d9d4;border-color:var(--end)}
-.why{font-size:14px;color:var(--mute);margin-top:4px}
+.why{unicode-bidi:plaintext;text-align:start;font-size:14px;color:var(--mute);margin-top:4px}
 .foot{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
 table{border-collapse:collapse;width:100%;font-size:14px;direction:ltr}td,th{border:1px solid var(--line);padding:6px 8px;text-align:left}
 </style>
@@ -153,14 +160,14 @@ try{done=JSON.parse(localStorage.getItem(K))||{}}catch{}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(done))}catch{}};
 const $=id=>document.getElementById(id);
 function nav(){const n=$("nav");n.textContent="";L.forEach((l,i)=>{const b=document.createElement("button");b.className=i===cur?"on":"";
-  const c=document.createElement("span");c.className="ck";c.textContent=done[i]?"✔":"";b.appendChild(c);b.appendChild(document.createTextNode((i+1)+". "+l.t));b.onclick=()=>{cur=i;render();scrollTo(0,0)};n.appendChild(b)});
+  const c=document.createElement("span");c.className="ck";c.textContent=done[i]?"✔":"";const nn=document.createElement("span");nn.className="n";nn.textContent=i+1;const tx=document.createElement("span");tx.className="tx";tx.textContent=l.t;b.append(nn,tx,c);b.onclick=()=>{cur=i;render();scrollTo(0,0)};n.appendChild(b)});
   const k=Object.keys(done).length;$("pt").textContent="التقدم: "+k+"/"+L.length;$("pb").style.width=(k/L.length*100)+"%"}
 function render(){const l=L[cur],a=$("art");a.textContent="";
-  const tg=document.createElement("div");tg.className="tag";tg.textContent="Lesson "+(cur+1)+" of "+L.length;a.appendChild(tg);
-  const h=document.createElement("h2");h.textContent=l.t;a.appendChild(h);
+  const tg=document.createElement("div");tg.className="tag";tg.textContent="درس "+(cur+1)+" من "+L.length;a.appendChild(tg);
+  const h=document.createElement("h2");h.textContent=l.t;h.dir="rtl";a.appendChild(h);
   const b=document.createElement("div");b.className="ar";b.innerHTML=l.b;a.appendChild(b);
   const t=document.createElement("div");t.className="task ar";t.innerHTML="<b>تمرين:</b> ";t.appendChild(document.createTextNode(l.task));a.appendChild(t);
-  const q=document.createElement("div");q.className="quiz";const qq=document.createElement("b");qq.textContent="Quick check: "+l.q.q;q.appendChild(qq);
+  const q=document.createElement("div");q.className="quiz";const qq=document.createElement("b");qq.textContent="سؤال سريع: "+l.q.q;q.appendChild(qq);
   const w=document.createElement("div");w.className="why";const bs=l.q.o.map((x,j)=>{const o=document.createElement("button");o.className="opt";o.textContent=x;o.onclick=()=>{
     bs.forEach(y=>y.disabled=true);bs[l.q.a].classList.add("ok");if(j!==l.q.a)o.classList.add("no");w.textContent=l.q.why;};q.appendChild(o);return o});q.appendChild(w);a.appendChild(q);
   const f=document.createElement("div");f.className="foot";
