@@ -30,6 +30,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .ghost{background:#e6ebf0;color:var(--ink)}
 #call{display:none;grid-template-columns:1fr;gap:14px;align-items:start}
 @media(min-width:860px){#call{grid-template-columns:340px 1fr}#prop{position:sticky;top:16px}}
+h1,p.sub,.warn{max-width:640px;margin-left:auto;margin-right:auto}
 #setup,#hist,#fb,#again{max-width:640px;margin-left:auto;margin-right:auto}
 .ph{height:120px;border-radius:10px;background:linear-gradient(135deg,#7fa88f,#4f7a63);display:flex;align-items:flex-end;padding:8px;color:#fff;font-size:12px;font-weight:600}
 .ph span{background:rgba(0,0,0,.45);border-radius:6px;padding:3px 8px}
@@ -47,6 +48,19 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .pbox h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
 .pbox div{display:flex;justify-content:space-between;gap:8px}
 .sim{font-size:11px;color:var(--mute);margin-top:8px}
+#guide{display:none;position:fixed;inset:0;background:rgba(22,32,43,.55);z-index:50;overflow:auto;padding:16px}
+#gsheet{max-width:720px;margin:0 auto;background:#fff;border-radius:14px;padding:18px;min-height:60vh}
+#gsheet h2{margin:0;font-size:22px}
+.gh{display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:-18px;background:#fff;padding:8px 0;z-index:2}
+details{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:#f6f8fa}
+summary{cursor:pointer;font-weight:700;padding:12px;list-style:none}
+summary::after{content:"+";float:right;font-weight:800}
+details[open] summary::after{content:"–"}
+.gb{padding:0 12px 12px;line-height:1.55;font-size:15px}
+.gb p{margin:6px 0}.gb ul{margin:6px 0;padding-left:20px}
+.q{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
+.q b{display:block;color:var(--end);font-size:14px}
+.ar{direction:rtl;text-align:right;background:#e8f4ec;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
 #ptoggle{display:none;width:100%;margin-bottom:8px}
 @media(max-width:859px){#ptoggle{display:block}#pbody.hide{display:none}}
 .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
@@ -100,6 +114,7 @@ h3{margin:16px 0 6px;font-size:16px}
       <option value="hard">Hard</option>
     </select>
     <button class="go" id="start">Start call</button>
+    <button class="ghost" id="guideOpen" style="width:100%;margin-top:10px">Guide: learn cold calling</button>
     <button class="ghost" id="histOpen" style="width:100%;margin-top:10px">History</button>
     <button class="install" id="install">Install as app</button>
     <div class="hint" id="iosHint">To install on iPhone: tap Share, then "Add to Home Screen".</div>
@@ -122,6 +137,7 @@ h3{margin:16px 0 6px;font-size:16px}
       </div>
       <div class="row">
         <button class="ghost" id="mic">Pause mic</button>
+        <button class="ghost" id="guideOpen2">Guide</button>
         <button class="end" id="hang" style="margin-left:auto">End call</button>
       </div>
     </div>
@@ -143,6 +159,7 @@ h3{margin:16px 0 6px;font-size:16px}
     <div id="hdet" style="display:none"></div>
   </section>
 </main>
+<div id="guide" role="dialog" aria-modal="true" aria-label="Cold calling guide"><div id="gsheet"></div></div>
 <script>
 const $ = id => document.getElementById(id);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -226,6 +243,36 @@ function propLine(h){
   return `${h.addr}, ${h.city} ${h.st}. ${h.beds} bd, ${h.baths} ba, ${h.sqft} sqft, built ${h.yr}, ${h.type}. Est. value ${money(h.zest)}, est. rent ${money(h.rent)}/mo. Status: ${h.status}` + (h.price ? `, asking ${money(h.price)}` : "") + (h.dom ? `, ${h.dom} days on market` : "") + `. Owner name: ${h.owner}.`;
 }
 $("ptoggle").onclick = () => $("pbody").classList.toggle("hide");
+
+// ---- Guide (available any time, also during a call) ----
+const GUIDE = [
+ {t:"1. The goal of a cold call", ar:"الهدف مش البيع في المكالمة. الهدف ميعاد (appointment) أو خطوة جاية.", html:`<p>You are not selling a house on the phone. You are earning the next step: a listing appointment, a free CMA (comparative market analysis), or permission to call back.</p><ul><li>Be calm, short and curious.</li><li>Ask more than you talk (aim for 60% listening).</li><li>Every call ends with a clear next step and a time.</li></ul>`},
+ {t:"2. Call structure (5 steps)", ar:"افتتاحية قصيرة، استأذن، اسأل، رد على الاعتراض، اقفل بميعاد.", html:`<ul><li><b>Opener (10 sec):</b> name, company, reason.</li><li><b>Permission:</b> "Did I catch you at a bad time?"</li><li><b>Discover:</b> timeline, motivation, price expectations.</li><li><b>Handle objections:</b> Acknowledge, Ask, Offer.</li><li><b>Close for a step:</b> "Would Tuesday at 4 or Wednesday at 10 work better?"</li></ul><div class="q"><b>Example opener</b>"Hi Mike, this is Yasser with ABC Realty. I saw your home on Maple Dr is for sale by owner. Did I catch you at a bad time?"</div>`},
+ {t:"3. Openers by lead type", ar:"كل نوع lead له افتتاحية مختلفة.", html:`<div class="q"><b>FSBO</b>"I'm not calling to list your home. I help FSBO sellers with buyer-agent commissions and paperwork. How's the response been so far?"</div><div class="q"><b>Expired</b>"I saw your listing came off the market. I'm not here to pitch. I'm curious what you'd want done differently if you sold it again."</div><div class="q"><b>Investor / absentee</b>"Values around your rental are up. Would you consider selling if the net numbers made sense?"</div><div class="q"><b>Past client / sphere</b>"Hi Karen, it's Yasser. Just checking in. How's the house treating you? Any plans for this year?"</div>`},
+ {t:"4. Objection handling (Acknowledge, Ask, Offer)", ar:"ماتجادلش. وافقه، اسأل سؤال، واعرض خطوة صغيرة.", html:`<div class="q"><b>"Not interested."</b>"Totally fair. Just so I don't waste your time, is it that you're not planning to sell, or the timing isn't right?"</div><div class="q"><b>"I already have an agent."</b>"Great, glad you're covered. If things ever change, are you open to a second opinion on value, no strings?"</div><div class="q"><b>"How did you get my number?"</b>"Your listing / public records. I'll take you off my list if you prefer. Before I do, can I ask one quick question?"</div><div class="q"><b>"What's your commission?"</b>"It's negotiable and depends on the plan. Instead of a number, can I show you what you'd net after costs? That's what matters."</div><div class="q"><b>"I'll think about it."</b>"Of course. What specifically would you want to think over? Maybe I can help with that now."</div><div class="q"><b>"I'm busy."</b>"No problem. When's a better 5 minutes today or tomorrow?"</div><div class="q"><b>"I want to sell it myself / save the commission."</b>"Makes sense. What would a buyer's agent fee do to your net? Let me send you a quick comparison."</div>`},
+ {t:"5. Questions that open people up", ar:"الأسئلة الصح بتخلي العميل يتكلم.", html:`<ul><li>"What's your ideal timeline?"</li><li>"What's most important to you in a sale?"</li><li>"If it sold at your price, where would you move?"</li><li>"What happened with the last listing?" (expired)</li><li>"What's the one thing that worries you about selling?"</li></ul>`},
+ {t:"6. Closing for the appointment", ar:"اعرض اختيارين محددين، مش سؤال مفتوح.", html:`<ul><li>Offer two time options, never "whenever you like".</li><li>Give value: "I'll bring recent comps and a net sheet."</li><li>Confirm: repeat day, time, address. Send a text or email.</li></ul><div class="q"><b>Close</b>"Based on what you told me, it makes sense to look at the numbers together. I have Tuesday 4:00 or Wednesday 10:00. Which is better?"</div>`},
+ {t:"7. Tone and delivery", ar:"الصوت أهم من الكلمات.", html:`<ul><li>Smile, stand up, slow down.</li><li>Keep sentences short. Pause after questions.</li><li>Avoid "just calling to...", "um", "to be honest".</li><li>Don't sound scripted. Know the idea, not the words.</li></ul>`},
+ {t:"8. Legal basics (USA / Canada)", ar:"مش نصيحة قانونية. تأكد من مختص قبل أي شغل حقيقي.", html:`<ul><li>US: National Do Not Call Registry and TCPA. Scrub lists.</li><li>Call only between 8 AM and 9 PM in the person's local time.</li><li>Autodialers and texts generally need consent.</li><li>Canada: National DNCL and CRTC rules.</li><li>If someone says stop, mark Do Not Call immediately.</li><li>Working from abroad: the US agent or brokerage is responsible for compliance.</li></ul>`},
+ {t:"9. Daily practice and metrics", ar:"التدريب اليومي والأرقام.", html:`<ul><li>10 to 15 practice calls daily, one focus each session (opener, one objection, closing).</li><li>Review History: read your feedback and rewrite weak lines.</li><li>Track: dials per hour, contacts, appointments per 100 dials.</li><li>Typical real-life rates are low (a few appointments per 100 dials), so volume and consistency win.</li></ul>`},
+ {t:"10. Vocabulary", ar:"مصطلحات لازم تعرفها.", html:`<ul><li><b>FSBO:</b> For Sale By Owner.</li><li><b>Expired:</b> listing ended without selling.</li><li><b>CMA:</b> comparative market analysis (comps).</li><li><b>DOM:</b> days on market.</li><li><b>MLS:</b> Multiple Listing Service.</li><li><b>Equity:</b> value minus mortgage owed.</li><li><b>Net sheet:</b> what the seller takes home.</li><li><b>Absentee owner:</b> owner lives elsewhere.</li><li><b>ISA:</b> inside sales agent (makes the calls, books appointments).</li><li><b>CRM:</b> software to track leads and follow-ups.</li></ul>`},
+];
+function renderGuide(){
+  const s = $("gsheet"); s.textContent = "";
+  const hd = el("div","gh"); hd.appendChild(el("h2","","Cold Calling Guide"));
+  const x = el("button","ghost","Close"); x.onclick = closeGuide; hd.appendChild(x); s.appendChild(hd);
+  GUIDE.forEach((g,i) => {
+    const d = document.createElement("details"); if (i === 0) d.open = true;
+    d.appendChild(el("summary","",g.t));
+    const b = el("div","gb"); b.innerHTML = g.html;
+    b.appendChild(el("div","ar",g.ar)); d.appendChild(b); s.appendChild(d);
+  });
+}
+function openGuide(){ renderGuide(); $("guide").style.display = "block"; $("guide").scrollTop = 0; }
+function closeGuide(){ $("guide").style.display = "none"; }
+$("guideOpen").onclick = openGuide; $("guideOpen2").onclick = openGuide;
+$("guide").onclick = e => { if (e.target === $("guide")) closeGuide(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeGuide(); });
 
 async function api(body){
   const r = await fetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
