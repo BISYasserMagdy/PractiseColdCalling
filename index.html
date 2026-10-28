@@ -66,6 +66,36 @@ details[open] summary::after{content:"–"}
 .q{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
 .q b{display:block;color:var(--end);font-size:14px}
 .ar{direction:rtl;text-align:right;background:#e8f4ec;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
+#lview{display:none;position:fixed;inset:0;background:#fff;z-index:60;overflow:auto;color:#111}
+.lt{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:3;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:8px}
+.lt .brand{font-weight:800;font-size:22px;color:#0041d9}
+.lb{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:3}
+.lb .tip{flex:1;font-size:13px;color:var(--mute)}
+.lw{max-width:1000px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:860px){.lw{grid-template-columns:1fr 300px}}
+.hero{height:200px;border-radius:12px;background:linear-gradient(180deg,#9fc3a7,#6d9a56 55%,#4f7a3a);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:35%;background:#3f6a2e}
+.hero i{position:absolute;left:14px;bottom:14px;z-index:2;background:#111;color:#fff;font-style:normal;font-weight:700;font-size:13px;padding:6px 10px;border-radius:8px}
+.big{font-size:38px;font-weight:800;line-height:1.1}
+.row3{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
+.st3{display:flex;gap:22px}.st3 b{font-size:28px;font-weight:800;display:block;line-height:1}.st3 span{font-size:14px;font-weight:700}
+.refi{background:#e3efff;border-radius:8px;padding:10px 12px;margin:12px 0;font-size:14px;display:inline-block}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+.g3 div{background:#eeeff1;border-radius:8px;padding:12px;font-size:14px;font-weight:600}
+.sec{border-top:1px solid #ddd;margin-top:20px;padding-top:14px}
+.sec h3{font-size:22px;margin:0 0 10px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;color:#666;font-weight:600;padding:6px 4px;border-bottom:1px solid #ddd}
+.tbl td{padding:8px 4px;border-bottom:1px solid #eee}
+.tag{display:inline-block;font-size:11px;font-weight:800;color:#fff;border-radius:5px;padding:2px 7px;background:#0b6bcb;margin-bottom:6px}
+.tag.red{background:#c2412d}.tag.gray{background:#5d6b79}.tag.amb{background:#b7791f}
+.side{border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:1.45;align-self:start}
+.side .cta{display:block;text-align:center;background:#0041d9;color:#fff;border-radius:8px;padding:12px;font-weight:700;margin-top:10px}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.vals div{background:#eeeff1;border-radius:8px;padding:12px;font-size:13px}
+.vals b{display:block;font-size:20px;margin-top:2px}
+.fl{columns:2;column-gap:20px;font-size:14px;line-height:1.7;margin:0;padding-left:18px}
+.leadbox{background:#fff8e1;border:1px solid #e6cf85;border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px}
 #ptoggle{display:none;width:100%;margin-bottom:8px}
 @media(max-width:859px){#ptoggle{display:block}#pbody.hide{display:none}}
 .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
@@ -143,6 +173,7 @@ h3{margin:16px 0 6px;font-size:16px}
       <div class="row">
         <button class="ghost" id="mic">Pause mic</button>
         <button class="ghost" id="guideOpen2">Guide</button>
+        <button class="ghost" id="listOpen">Listing</button>
         <button class="end" id="hang" style="margin-left:auto">End call</button>
       </div>
     </div>
@@ -164,6 +195,7 @@ h3{margin:16px 0 6px;font-size:16px}
     <div id="hdet" style="display:none"></div>
   </section>
 </main>
+<div id="lview"></div>
 <div id="guide" role="dialog" aria-modal="true" aria-label="Cold calling guide"><div id="gsheet"></div></div>
 <script>
 const $ = id => document.getElementById(id);
@@ -220,7 +252,7 @@ function makeProp(p){
   else if (p === "hesitant") { h.hist = [[ago(2900), "Sold", money(z*0.55)]]; h.notes = "Owner-occupied. Asked about the market on a past online form. Unsure about timing."; }
   else { h.hist = [[ago(4300), "Sold", money(z*0.42)]]; h.notes = "Owner-occupied 10+ years. Lots of equity. No known plans to sell."; }
   h.equity = money(z*0.7);
-  return h;
+  return extendProp(h, p);
 }
 function renderProp(h){
   const b = $("pbody"); b.textContent = "";
@@ -331,6 +363,85 @@ function renderGuide(){
   };
   inp.oninput = draw; draw();
 }
+function extendProp(h, p){
+  const z = h.zest, rnd = (a,b) => a + Math.random()*(b-a);
+  h.chg = Math.round(rnd(-2,9)*10)/10;
+  h.zLo = money(z*0.94); h.zHi = money(z*1.06);
+  h.rLo = money(h.rent*0.9); h.rHi = money(h.rent*1.1);
+  const loan = z*0.8, r = 0.065/12, n = 360; h.refi = money(loan*r/(1-Math.pow(1+r,-n)));
+  h.taxes = [[2025, z*0.0105, z*0.82],[2024, z*0.0101, z*0.78],[2023, z*0.0098, z*0.73]].map(x => [x[0], money(x[1]), money(x[2])]);
+  const streets = ["Elm St","Pine Ave","Cedar Ln","Lakeview Dr","Sunset Blvd","Hickory Ct","Oak Park Rd","Briar Way"];
+  h.comps = [0,1,2,3].map(i => { const sq = Math.round(h.sqft*rnd(0.88,1.12)/10)*10; return {
+    addr: Math.floor(rnd(100,9800)) + " " + pick(streets), beds: Math.max(2, h.beds + (Math.random()<.3?1:0) - (Math.random()<.3?1:0)), baths: h.baths, sqft: sq,
+    sold: money(r1000(z*rnd(0.9,1.1)*sq/h.sqft)), date: ago(Math.floor(rnd(20,170))), dist: rnd(0.1,0.9).toFixed(1) + " mi" }; });
+  h.schools = [["Lincoln Elementary","Elementary",Math.floor(rnd(3,9)),"0."+Math.floor(rnd(3,9))+" mi"],["Roosevelt Middle","Middle",Math.floor(rnd(3,9)),(rnd(0.8,2.2)).toFixed(1)+" mi"],["Central High","High",Math.floor(rnd(3,9)),(rnd(1.2,3.4)).toFixed(1)+" mi"]];
+  h.facts = ["Type: " + h.type, "Year built: " + h.yr, "Lot: " + h.lot, "Stories: " + pick(["1","2"]), "Heating: " + pick(["Forced air","Heat pump","Baseboard"]),
+    "Cooling: " + pick(["Central air","Window units","None"]), "Parking: " + pick(["2-car garage","Driveway","1-car garage"]), "Basement: " + pick(["Finished","Unfinished","None"]),
+    "HOA: " + pick(["None","$45/mo"]), "Roof: " + pick(["Asphalt shingle (updated)","Asphalt shingle (original)","Unknown"]), "Parcel #: " + Math.floor(rnd(1e7,9e7)) + "-" + Math.floor(rnd(100,999))];
+  h.walk = Math.floor(rnd(25,85)); h.tr = Math.floor(rnd(10,60));
+  return h;
+}
+function renderListing(h){
+  const root = el("div","lw"); const main = el("div"); root.appendChild(main);
+  const hero = el("div","hero"); hero.appendChild(el("i","","Street View (simulation)")); main.appendChild(hero);
+  const hd = el("div","row3"); hd.style.marginTop = "14px";
+  const l = el("div"); l.appendChild(el("span","tag " + h.cls, h.status.toUpperCase()));
+  l.appendChild(el("div","big", money(h.price || h.zest)));
+  l.appendChild(el("div","sub", h.addr + ", " + h.city + ", " + h.st + " " + h.zip)); hd.appendChild(l);
+  const s3 = el("div","st3"); [[h.beds,"beds"],[h.baths,"baths"],[h.sqft.toLocaleString("en-US"),"sqft"]].forEach(([v,t]) => { const d = el("div"); d.appendChild(el("b","",String(v))); d.appendChild(el("span","",t)); s3.appendChild(d); });
+  hd.appendChild(s3); main.appendChild(hd);
+  const rf = el("div","refi"); rf.appendChild(document.createTextNode("Est. refi payment: ")); rf.appendChild(el("b","",h.refi + "/mo")); main.appendChild(rf);
+  const g = el("div","g3"); [h.type, "Built in " + h.yr, h.lot + " lot", money(h.zest) + " value est.", h.ppsf, money(h.rent) + " est. rent"].forEach(t => g.appendChild(el("div","",t))); main.appendChild(g);
+
+  const lead = el("div","leadbox"); lead.appendChild(el("b","","Lead notes: ")); lead.appendChild(document.createTextNode(h.notes + " Owner of record: " + h.owner + ". Est. equity " + h.equity + ".")); main.appendChild(lead);
+
+  const sec = (title) => { const s = el("div","sec"); s.appendChild(el("h3","",title)); main.appendChild(s); return s; };
+  let s = sec("Home value");
+  const v = el("div","vals"); [["Value estimate", money(h.zest), (h.chg >= 0 ? "+" : "") + h.chg + "% last 12 mo"],["Estimated sales range", h.zLo + " – " + h.zHi, ""],["Rent estimate", money(h.rent) + "/mo", h.rLo + " – " + h.rHi]]
+    .forEach(([a,b,c]) => { const d = el("div","",a); d.appendChild(el("b","",b)); if (c) d.appendChild(el("span","",c)); v.appendChild(d); }); s.appendChild(v);
+
+  s = sec("Price history");
+  const t1 = document.createElement("table"); t1.className = "tbl"; t1.innerHTML = "<tr><th>Date</th><th>Event</th><th>Price</th></tr>";
+  h.hist.forEach(x => { const r = t1.insertRow(); [x[0],x[1],x[2]].forEach(c => r.insertCell().textContent = c); }); s.appendChild(t1);
+  if (h.dom) s.appendChild(el("p","sub","Days on market: " + h.dom));
+
+  s = sec("Public tax history");
+  const t2 = document.createElement("table"); t2.className = "tbl"; t2.innerHTML = "<tr><th>Year</th><th>Property taxes</th><th>Tax assessment</th></tr>";
+  h.taxes.forEach(x => { const r = t2.insertRow(); x.forEach(c => r.insertCell().textContent = c); }); s.appendChild(t2);
+
+  s = sec("Facts & features"); const ul = el("ul","fl"); h.facts.forEach(f => ul.appendChild(el("li","",f))); s.appendChild(ul);
+
+  s = sec("Nearby recent sales");
+  const t3 = document.createElement("table"); t3.className = "tbl"; t3.innerHTML = "<tr><th>Address</th><th>Bd/Ba</th><th>Sqft</th><th>Sold</th><th>Date</th><th>Dist.</th></tr>";
+  h.comps.forEach(c => { const r = t3.insertRow(); [c.addr, c.beds + "/" + c.baths, c.sqft.toLocaleString("en-US"), c.sold, c.date, c.dist].forEach(x => r.insertCell().textContent = x); }); s.appendChild(t3);
+
+  s = sec("Schools & neighborhood");
+  const t4 = document.createElement("table"); t4.className = "tbl"; t4.innerHTML = "<tr><th>School</th><th>Level</th><th>Rating</th><th>Distance</th></tr>";
+  h.schools.forEach(x => { const r = t4.insertRow(); [x[0], x[1], x[2] + "/10", x[3]].forEach(c => r.insertCell().textContent = c); }); s.appendChild(t4);
+  s.appendChild(el("p","sub","Walk Score " + h.walk + "/100 · Transit Score " + h.tr + "/100"));
+
+  const side = el("aside","side"); side.appendChild(el("h3","","Get a cash offer in 3 minutes")); side.style.margin = "0";
+  side.appendChild(el("p","","Find out how much your home could sell for with a no-obligation cash offer."));
+  side.appendChild(el("div","","Estimated market value")); side.appendChild(el("b","",money(h.zest)));
+  side.appendChild(el("span","cta","Start now")); side.appendChild(el("p","sim","Fictional data and demo design for practice. Not a real listing or a real company."));
+  root.appendChild(side);
+  return root;
+}
+let lmode = "research";
+function openListing(mode){
+  lmode = mode; const L = $("lview"); L.textContent = "";
+  const top = el("div","lt"); const bk = el("button","ghost", mode === "research" ? "← Back" : "← Back to call");
+  bk.onclick = mode === "research" ? () => { closeListing(); $("setup").style.display = "block"; } : closeListing; top.appendChild(bk);
+  top.appendChild(el("div","brand","Homeview")); top.appendChild(el("div","sub","Property page")); L.appendChild(top);
+  L.appendChild(renderListing(prop));
+  if (mode === "research") {
+    const bar = el("div","lb"); bar.appendChild(el("div","tip","Study this property and the lead notes first, then dial. Plan your opener."));
+    const d = el("button","go","Dial now"); d.style.width = "auto"; d.onclick = dial; bar.appendChild(d); L.appendChild(bar);
+  }
+  L.style.display = "block"; L.scrollTop = 0;
+}
+function closeListing(){ $("lview").style.display = "none"; }
+
 function openGuide(){ renderGuide(); $("guide").style.display = "block"; $("guide").scrollTop = 0; }
 function closeGuide(){ $("guide").style.display = "none"; }
 $("guideOpen").onclick = openGuide; $("guideOpen2").onclick = openGuide;
@@ -386,14 +497,18 @@ function stopRec(){ if (rec) { rec.onend = null; try { rec.abort(); } catch {} }
 
 $("start").onclick = () => {
   persona = $("persona").value; level = $("level").value;
-  $("setup").style.display = "none"; $("call").style.display = "grid";
+  prop = makeProp(persona); $("setup").style.display = "none"; openListing("research");
+};
+$("listOpen").onclick = () => openListing("call");
+function dial(){
+  closeListing(); $("call").style.display = "grid";
   $("who").textContent = NAMES[persona] + " (" + $("level").selectedOptions[0].text + ")";
-  prop = makeProp(persona); renderProp(prop);
+  renderProp(prop);
   t0 = Date.now();
   tick = setInterval(() => { const s = Math.floor((Date.now()-t0)/1000); $("timer").textContent = String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }, 1000);
   msgs = [{role:"user", text:"[The phone rings and you pick up. Say hello the way you naturally would.]", hidden:true}];
   turn();
-};
+}
 $("send").onclick = () => { userSays($("txt").value); $("txt").value = ""; };
 $("txt").onkeydown = e => { if (e.key === "Enter") $("send").click(); };
 $("mic").onclick = () => {
