@@ -58,6 +58,11 @@ summary::after{content:"+";float:right;font-weight:800}
 details[open] summary::after{content:"–"}
 .gb{padding:0 12px 12px;line-height:1.55;font-size:15px}
 .gb p{margin:6px 0}.gb ul{margin:6px 0;padding-left:20px}
+.mh{margin:18px 0 4px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--go)}
+#gsearch{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;margin:4px 0 6px}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);margin:6px 0;font-weight:400}
+.opt.ok{background:#d9f2e3;border-color:var(--go)}.opt.no{background:#f8d9d4;border-color:var(--end)}
+.why{margin:6px 0 10px;font-size:14px;color:var(--mute)}
 .q{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
 .q b{display:block;color:var(--end);font-size:14px}
 .ar{direction:rtl;text-align:right;background:#e8f4ec;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
@@ -257,16 +262,74 @@ const GUIDE = [
  {t:"9. Daily practice and metrics", ar:"التدريب اليومي والأرقام.", html:`<ul><li>10 to 15 practice calls daily, one focus each session (opener, one objection, closing).</li><li>Review History: read your feedback and rewrite weak lines.</li><li>Track: dials per hour, contacts, appointments per 100 dials.</li><li>Typical real-life rates are low (a few appointments per 100 dials), so volume and consistency win.</li></ul>`},
  {t:"10. Vocabulary", ar:"مصطلحات لازم تعرفها.", html:`<ul><li><b>FSBO:</b> For Sale By Owner.</li><li><b>Expired:</b> listing ended without selling.</li><li><b>CMA:</b> comparative market analysis (comps).</li><li><b>DOM:</b> days on market.</li><li><b>MLS:</b> Multiple Listing Service.</li><li><b>Equity:</b> value minus mortgage owed.</li><li><b>Net sheet:</b> what the seller takes home.</li><li><b>Absentee owner:</b> owner lives elsewhere.</li><li><b>ISA:</b> inside sales agent (makes the calls, books appointments).</li><li><b>CRM:</b> software to track leads and follow-ups.</li></ul>`},
 ];
+
+const G2 = [
+ {m:"Preparation", t:"Before you dial: research and setup", ar:"التحضير قبل المكالمة بيفرق أكتر من الـ script.", html:`<ul><li>Read the property facts first: price, days on market, history, equity (use the panel in the app).</li><li>Write 2 or 3 personal facts you can mention (street, neighborhood, listing date).</li><li>Prepare your goal for the call: one appointment, or one useful piece of info.</li><li>Use a quiet room, a headset, water, and a smile mirror or note: "Smile".</li><li>Keep a CRM or a simple sheet: name, phone, result, follow-up date, notes.</li><li>Do a time block (60 to 90 minutes) with no interruptions.</li></ul>`},
+ {m:"Preparation", t:"Best times to call", ar:"أوقات الاتصال بتفرق في نسبة الرد.", html:`<ul><li>Common advice: 9 to 11 AM and 4:30 to 7 PM local time, on weekdays.</li><li>FSBO and expired leads: early morning and early evening often work well.</li><li>Always respect local time zones: 8 AM to 9 PM only.</li><li>Test and track your own contact rate by hour. Your data beats general advice.</li></ul>`},
+ {m:"Preparation", t:"Mindset and handling rejection", ar:"الرفض جزء من اللعبة، مش حكم عليك.", html:`<ul><li>Most calls will end in "no". That is the normal numbers game.</li><li>Goal for practice: count dials and conversations, not only appointments.</li><li>After a hang-up, take 10 seconds, breathe, and dial the next one.</li><li>Do not take it personally: they are rejecting an interruption, not you.</li><li>Celebrate small wins: a longer conversation, a good question, a callback.</li></ul>`},
+ {m:"Real estate knowledge", t:"How a home sale works (so you sound credible)", ar:"لازم تفهم مراحل البيع عشان تتكلم بثقة.", html:`<ul><li><b>Listing appointment:</b> agent presents CMA, marketing plan, pricing, and signs a listing agreement.</li><li><b>Prep and photos:</b> clean, small repairs, professional photos.</li><li><b>MLS and marketing:</b> online listings, open houses, showings.</li><li><b>Offers and negotiation:</b> price, contingencies (inspection, financing, appraisal), closing date.</li><li><b>Under contract to closing:</b> inspection, appraisal, title, escrow, then closing and keys.</li><li>Typical timeline from listing to closing is often 2 to 4 months, but it varies by market.</li></ul>`},
+ {m:"Real estate knowledge", t:"Pricing, comps, and net proceeds", ar:"السعر والـ comps والـ net هم أساس الإقناع.", html:`<ul><li><b>Comps:</b> recent nearby sales of similar homes. Usually last 3 to 6 months, within about a mile.</li><li><b>Overpricing</b> is the main reason listings expire: more days on market, then price cuts.</li><li><b>Net proceeds</b> = sale price minus mortgage payoff, agent fees, closing costs, repairs, and credits.</li><li>Closing costs for sellers are often a few percent of the price, plus commission. Say "it depends" and offer to calculate exactly.</li><li>Never promise a price. Say: "Let me look at the comps and give you a real range."</li></ul>`},
+ {m:"Real estate knowledge", t:"Commissions today (US)", ar:"العمولة قابلة للتفاوض ومتغيّرة بعد 2024.", html:`<p>In the US, commissions are negotiable. After the 2024 NAR settlement changes, buyer-agent compensation is no longer set or advertised through the MLS offer the old way, and buyers generally sign a written agreement with their agent. Rules and practices vary by state and brokerage, so confirm with your broker before quoting anything.</p><ul><li>Do not quote a fixed percentage on a cold call. Talk about value and net proceeds.</li><li>Be ready for: "Why should I pay you?" Answer with marketing, pricing accuracy, negotiation, and fewer days on market.</li></ul>`},
+ {m:"Lead types in depth", t:"FSBO: strategy", ar:"المالك عايز يوفر العمولة، فاتكلم عن الـ net.", html:`<ul><li><b>Their pain:</b> many calls from agents, low-ball buyers, paperwork, legal risk, weak exposure.</li><li><b>Your angle:</b> "I'm not here to take your listing. I'd like to be your resource."</li><li><b>Ask:</b> "How many showings so far?", "Any offers?", "What's your plan if it doesn't sell in 30 days?"</li><li><b>Offer:</b> free CMA, buyer-agent info, net sheet, marketing review.</li><li>Follow up often: many FSBOs list with an agent after a few weeks.</li></ul>`},
+ {m:"Lead types in depth", t:"Expired listings: strategy", ar:"المالك متضايق: اسمع الأول، بعدين اعرض خطة مختلفة.", html:`<ul><li><b>Their pain:</b> wasted months, showings with no offers, trust issues with the last agent.</li><li><b>Never</b> badmouth the previous agent.</li><li><b>Ask:</b> "What feedback did you get from showings?", "What do you think held it back?", "Do you still want to sell?"</li><li><b>Offer:</b> a different plan: pricing review, better photos, new marketing, a candid CMA.</li><li>Calling fast is key: other agents call the same day.</li></ul>`},
+ {m:"Lead types in depth", t:"Investors and absentee owners", ar:"الأرقام هي اللغة هنا.", html:`<ul><li>Talk numbers: price, net, timeline, 1031 exchange (ask a tax pro), tenant situation.</li><li>Ask: "Are you happy with the return on this property?", "Would you sell for the right number?"</li><li>Offer: a short valuation and an off-market buyer list if you have one.</li><li>Keep it quick and respectful. Investors dislike long pitches.</li></ul>`},
+ {m:"Lead types in depth", t:"Busy people, gatekeepers, and spouses", ar:"إزاي تتعامل مع مشغول ولازم أكلم زوجتي.", html:`<div class="q"><b>"I'm busy."</b>"Of course. Would 5 minutes tomorrow at 6 PM be okay, or is another time better?"</div><div class="q"><b>"I need to talk to my wife / husband."</b>"Absolutely. Would it help to have a quick call with both of you? What time works for both?"</div><div class="q"><b>Someone else answers</b>"Hi, this is Yasser. Is [name] available? I'm calling about the property on [street]."</div><div class="q"><b>Wrong number</b>"Sorry about that. Thanks, have a great day." Mark it in your CRM.</div>`},
+ {m:"Communication skills", t:"Rapport and active listening", ar:"الاستماع الذكي بيخلي العميل يثق فيك.", html:`<ul><li><b>Mirroring:</b> repeat the last 2 or 3 words as a question. ("...not interested right now?")</li><li><b>Labeling:</b> "It sounds like you're frustrated with the last agent."</li><li><b>Summarize:</b> "So you want to sell by spring and net at least X. Did I get that right?"</li><li><b>Silence:</b> ask, then stop talking.</li><li>Match their pace: slow with calm people, quick with impatient ones.</li><li>Good book: Chris Voss, "Never Split the Difference".</li></ul>`},
+ {m:"Communication skills", t:"Handling rude or angry people", ar:"خليك هادي واقفل بأدب.", html:`<ul><li>Do not argue. Lower your voice and slow down.</li><li>"I understand. I'm sorry to bother you. I'll remove you from my list. Have a good day."</li><li>If they ask to be removed, comply right away and record it.</li><li>Do not call back after a clear "do not call me".</li></ul>`},
+ {m:"Follow-up", t:"Voicemail and follow-up cadence", ar:"أغلب الصفقات بتيجي من المتابعة.", html:`<div class="q"><b>Voicemail (under 20 sec)</b>"Hi Mike, this is Yasser with ABC Realty about your home on Maple Dr. I have a quick idea about your sale. I'll try you again tomorrow, or call me at 555-0100."</div><ul><li>Many prospects need many touches (often 8 or more) over several weeks.</li><li>Mix: call, short text (if allowed), email, mail.</li><li>Each touch should give value: new comps, a market update, a price change nearby.</li><li>Log the date and the next action every time.</li></ul>`},
+ {m:"Review", t:"Common mistakes", ar:"أخطاء بتضيّع المكالمة.", html:`<ul><li>Talking too much, or reading a script robotically.</li><li>Pitching before asking questions.</li><li>Arguing with objections.</li><li>Vague close: "let me know".</li><li>Not using property facts you already have.</li><li>Giving up after the first "no".</li><li>Not reviewing your calls.</li></ul>`},
+ {m:"Review", t:"After-call checklist (use with your feedback)", ar:"اسأل نفسك بعد كل مكالمة.", html:`<ul><li>Did I ask permission and keep the opener under 15 seconds?</li><li>How many questions did I ask? Did I listen?</li><li>Did I use the property facts naturally?</li><li>Did I handle each objection with Acknowledge, Ask, Offer?</li><li>Did I ask for a specific appointment time?</li><li>One line I'll improve next call: ____</li></ul>`},
+ {m:"Review", t:"14-day practice plan", ar:"خطة تدريب 14 يوم.", html:`<ul><li><b>Days 1-2:</b> openers only (3 calls per lead type).</li><li><b>Days 3-4:</b> "not interested" and "I have an agent".</li><li><b>Days 5-6:</b> discovery questions on FSBO and expired.</li><li><b>Days 7-8:</b> price and commission objections.</li><li><b>Days 9-10:</b> closing for appointments.</li><li><b>Days 11-12:</b> hard difficulty, investor, busy.</li><li><b>Days 13-14:</b> full calls, aim for 8/10 average, review History.</li></ul>`},
+ {m:"Resources", t:"Books and creators to study", ar:"مصادر تتعلم منها أكتر.", html:`<ul><li>Jeb Blount, "Fanatical Prospecting".</li><li>Chris Voss, "Never Split the Difference".</li><li>Neil Rackham, "SPIN Selling".</li><li>Tom Hopkins, "How to Master the Art of Selling".</li><li>Tom Ferry and Mike Ferry: real estate scripts and coaching (YouTube and podcasts).</li><li>Search YouTube: "FSBO script", "expired listing script", "real estate objection handling". Compare several coaches and take what fits you.</li><li>Your state's real estate commission website for rules, and your broker's compliance guidance.</li></ul>`},
+];
+const QUIZ = [
+ {q:"What is the main goal of a cold call?", o:["Close the sale on the phone","Earn a next step like an appointment","Talk as long as possible","Send an email"], a:1, why:"You earn the next step. The sale happens later."},
+ {q:"Best way to open?", o:["Long company history","Name, company, reason, then ask permission","Immediately ask for the listing","Read a long script"], a:1, why:"Short and respectful lowers defenses."},
+ {q:"A seller says \"I already have an agent.\" Best reply?", o:["Your agent is bad","Glad you're covered. Open to a second opinion if things change?","Hang up","Explain your commission"], a:1, why:"Acknowledge, then ask a low-pressure question."},
+ {q:"Why do many listings expire?", o:["Bad photos only","Overpricing and weak marketing","Too many buyers","Winter"], a:1, why:"Overpricing is the most common cause."},
+ {q:"Which is a strong close?", o:["Let me know if interested","Tuesday 4:00 or Wednesday 10:00, which is better?","Call me sometime","I'll email you"], a:1, why:"Two specific options make deciding easy."},
+ {q:"Legal calling hours (US)?", o:["Any time","8 AM to 9 PM, recipient's local time","6 AM to 6 PM, your time","Only evenings"], a:1, why:"Also scrub against the Do Not Call registry."},
+ {q:"\"What's your commission?\" Best approach?", o:["Quote a fixed % immediately","Say it's negotiable and focus on net proceeds","Refuse to answer","Say it's free"], a:1, why:"Shift from price to value and net."},
+ {q:"What should you do when someone clearly says do not call?", o:["Call again later","Stop and record them as Do Not Call","Send texts instead","Use another number"], a:1, why:"Compliance and respect."},
+ {q:"On an expired listing, you should...", o:["Criticize the previous agent","Listen, ask what held it back, offer a different plan","Promise a higher price","Skip the call"], a:1, why:"Never badmouth; offer a clear new plan."},
+ {q:"Silence after a question is...", o:["Awkward, fill it","A tool: let them answer","A reason to hang up","Rude"], a:1, why:"People reveal more when you wait."},
+];
+G2.forEach(x => GUIDE.push(x));
+function renderQuiz(box){
+  let score = 0, done = 0; const out = el("div","gb");
+  const sc = el("p","","Score: 0/" + QUIZ.length); out.appendChild(sc);
+  QUIZ.forEach((q,i) => {
+    const w = el("div","q"); w.appendChild(el("b","",(i+1)+". "+q.q));
+    const why = el("div","why"); why.style.display = "none";
+    const btns = q.o.map((t,j) => { const b = el("button","opt",t); b.onclick = () => {
+      if (b.disabled) return; btns.forEach(x => x.disabled = true);
+      btns[q.a].classList.add("ok"); if (j !== q.a) b.classList.add("no"); else score++;
+      done++; why.textContent = q.why; why.style.display = "block"; sc.textContent = "Score: " + score + "/" + QUIZ.length + (done === QUIZ.length ? " (done)" : "");
+    }; w.appendChild(b); return b; });
+    w.appendChild(why); out.appendChild(w);
+  });
+  box.appendChild(out);
+}
 function renderGuide(){
   const s = $("gsheet"); s.textContent = "";
-  const hd = el("div","gh"); hd.appendChild(el("h2","","Cold Calling Guide"));
+  const hd = el("div","gh"); hd.appendChild(el("h2","","Cold Calling Course"));
   const x = el("button","ghost","Close"); x.onclick = closeGuide; hd.appendChild(x); s.appendChild(hd);
-  GUIDE.forEach((g,i) => {
-    const d = document.createElement("details"); if (i === 0) d.open = true;
-    d.appendChild(el("summary","",g.t));
-    const b = el("div","gb"); b.innerHTML = g.html;
-    b.appendChild(el("div","ar",g.ar)); d.appendChild(b); s.appendChild(d);
-  });
+  const inp = document.createElement("input"); inp.type = "text"; inp.id = "gsearch"; inp.placeholder = "Search (e.g. FSBO, voicemail, commission)"; s.appendChild(inp);
+  const list = el("div"); s.appendChild(list);
+  const draw = () => {
+    const f = inp.value.trim().toLowerCase(); list.textContent = ""; let last = "", n = 0;
+    GUIDE.forEach((g,i) => {
+      const txt = (g.t + " " + g.html + " " + g.ar).toLowerCase();
+      if (f && !txt.includes(f)) return;
+      const m = g.m || "Basics"; if (m !== last) { list.appendChild(el("div","mh",m)); last = m; }
+      const d = document.createElement("details"); if (f || (!f && i === 0)) d.open = true;
+      d.appendChild(el("summary","",g.t));
+      const b = el("div","gb"); b.innerHTML = g.html; b.appendChild(el("div","ar",g.ar)); d.appendChild(b); list.appendChild(d); n++;
+    });
+    if (!f) { list.appendChild(el("div","mh","Test yourself")); const d = document.createElement("details"); d.appendChild(el("summary","","Quiz: 10 questions")); renderQuiz(d); list.appendChild(d); }
+    else if (!n) list.appendChild(el("p","sub","No results."));
+  };
+  inp.oninput = draw; draw();
 }
 function openGuide(){ renderGuide(); $("guide").style.display = "block"; $("guide").scrollTop = 0; }
 function closeGuide(){ $("guide").style.display = "none"; }
