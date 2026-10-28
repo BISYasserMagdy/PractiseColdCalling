@@ -234,8 +234,48 @@ const r1000 = n => Math.round(n/1000)*1000;
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const ago = d => new Date(Date.now() - d*864e5).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 
+const STATES = [
+ {st:"IN",c:["Indianapolis","Fort Wayne","Evansville"],tz:"America/Indiana/Indianapolis",pp:105,z:"46",ac:"317"},
+ {st:"OH",c:["Columbus","Cleveland","Cincinnati"],tz:"America/New_York",pp:135,z:"43",ac:"614"},
+ {st:"NC",c:["Charlotte","Raleigh","Greensboro"],tz:"America/New_York",pp:190,z:"28",ac:"704"},
+ {st:"FL",c:["Tampa","Orlando","Jacksonville"],tz:"America/New_York",pp:230,z:"33",ac:"813"},
+ {st:"TX",c:["Houston","Dallas","San Antonio"],tz:"America/Chicago",pp:165,z:"77",ac:"713"},
+ {st:"AZ",c:["Phoenix","Mesa","Tucson"],tz:"America/Phoenix",pp:255,z:"85",ac:"602"},
+ {st:"MO",c:["Kansas City","St. Louis"],tz:"America/Chicago",pp:120,z:"64",ac:"816"},
+ {st:"GA",c:["Atlanta","Savannah","Augusta"],tz:"America/New_York",pp:185,z:"30",ac:"404"},
+ {st:"CA",c:["Fresno","Sacramento","San Diego"],tz:"America/Los_Angeles",pp:420,z:"95",ac:"559"},
+ {st:"ON",c:["Hamilton","London","Ottawa"],tz:"America/Toronto",pp:440,z:"",ac:"905"},
+];
+const STREETS = ["Maple Ridge Dr","Oakwood Ln","Cedar Crest Way","Birch Hollow Ct","Prairie View Rd","Lakeshore Ave","Willow Bend","Sunset Blvd","Pine St","Elm St","Highland Ave","Meadow Ln","River Rd","Church St","Park Ave","Walnut St","Hillcrest Dr","Chestnut St","Shearer Rd","Orchard Way"];
+const rr = (a,b) => a + Math.random()*(b-a), ri = (a,b) => Math.floor(rr(a,b+1));
+function genHome(){
+  const S = pick(STATES), t = Math.random(); 
+  const type = t < .70 ? "Single Family" : t < .82 ? "Townhouse" : t < .90 ? "Condo" : "Multi-family";
+  const condo = type === "Condo", sqft = Math.round((condo ? rr(650,1300) : type === "Multi-family" ? rr(1700,3000) : rr(1000,2300))/10)*10;
+  const beds = condo ? ri(1,2) : sqft < 1300 ? ri(2,3) : sqft < 2000 ? ri(3,4) : ri(4,5);
+  const yr = ri(1925,2018), age = (2026-yr);
+  const zest = r1000(sqft * S.pp * .8 * rr(.85,1.2) * (age > 70 ? .92 : age < 15 ? 1.12 : 1));
+  const zip = S.st === "ON" ? pick("KLMN") + ri(1,9) + pick("ABCEG") + " " + ri(1,9) + pick("ABCEG") + ri(1,9) : S.z + String(ri(100,999));
+  return {addr: ri(20,9899) + " " + (Math.random()<.35 ? pick(["E","W","N","S"]) + " " : "") + pick(STREETS), city: pick(S.c), st: S.st, zip, tz: S.tz, ac: S.ac,
+    beds, baths: Math.max(1, beds - ri(0,1) - (Math.random()<.5 ? .5 : 0)), sqft, yr, lot: condo ? "—" : (rr(.08,.45)).toFixed(2) + " acres", zest, rent: Math.round(zest*rr(.0065,.0085)/10)*10, type};
+}
+const COACH = {
+ fsbo:{goal:"Book a short meeting or get permission to send a free CMA and buyer-agent info.",open:"Hi Mike, this is Yasser with ABC Realty. I saw your home is for sale by owner. Did I catch you at a bad time?",qs:["How many showings and calls have you had so far?","What's your plan if it doesn't sell in the next 30 days?","What matters most to you: price, speed, or less hassle?"],watch:"Don't attack FSBO. Don't ask for the listing on the first call."},
+ expired:{goal:"Listen first, then offer a free pricing review and a different marketing plan.",open:"Hi Linda, I saw your home came off the market. I'm not here to pitch. Do you still want to sell?",qs:["What feedback did you get from showings?","What do you think held it back?","What would you want done differently this time?"],watch:"Never badmouth the old agent. Don't promise a higher price."},
+ busy:{goal:"Earn 20 seconds, then book a better time to call.",open:"Hi Dave, Yasser with ABC Realty. I know you're busy. Can I take 20 seconds to tell you why I called?",qs:["When is a better 5 minutes today or tomorrow?"],watch:"Be short. If he says later, set a time and say thanks."},
+ hasagent:{goal:"Stay respectful, ask for a second opinion, and keep the door open.",open:"Hi Karen, Yasser with ABC Realty. I work in your area. Are you thinking about selling anytime soon?",qs:["Are you happy with how things are going with your agent?","If you ever sell, what would make you consider a second opinion?"],watch:"Don't push. Accept 'I'm covered', then ask one soft question."},
+ hesitant:{goal:"Reduce uncertainty with facts and book a no-pressure market review.",open:"Hi Priya, Yasser with ABC Realty. Do you have a minute? I'm helping homeowners understand their options.",qs:["What worries you most about selling now?","What would need to be true for you to consider it?","Would a quick value review help you decide?"],watch:"Answer her questions with data (comps, equity), not pressure."},
+ notint:{goal:"Create curiosity with value, then ask permission for a short follow-up.",open:"Hi Tom, Yasser with ABC Realty. I'm not calling to list your home. I noticed values on your street went up. Got a quick minute?",qs:["Out of curiosity, have you checked what your home is worth now?","If the number surprised you, would you want to know?"],watch:"Don't argue with 'not interested'. Acknowledge, then ask one question."},
+ investor:{goal:"Talk numbers fast and offer a net proceeds estimate.",open:"Hi Carlos, Yasser with ABC Realty. Values around your rental are up. Would you sell for the right number?",qs:["What return are you getting on this property now?","What net number would make you sell?","What's your timeline and tenant situation?"],watch:"Skip small talk. Use the value, rent, and equity from the page."},
+};
+const NOTES = ["No answer","Voicemail left","Said call back next week","Hung up quickly","Asked to send info by email","Gatekeeper answered"];
+function localTime(h){
+  const d = new Date(), hr = +d.toLocaleString("en-US",{timeZone:h.tz,hour:"numeric",hour12:false}) % 24;
+  return {txt: d.toLocaleTimeString("en-US",{timeZone:h.tz,hour:"numeric",minute:"2-digit"}), ok: hr >= 8 && hr < 21};
+}
+
 function makeProp(p){
-  const h = Object.assign({}, pick(HOMES)), z = h.zest;
+  const h = genHome(), z = h.zest;
   h.owner = NAMES[p] + " " + pick(LAST);
   h.ppsf = money(z/h.sqft) + "/sqft"; h.tax = money(z*0.011) + "/yr";
   h.hist = []; h.notes = ""; h.status = "Off market"; h.cls = "gray"; h.price = null; h.dom = null;
@@ -267,7 +307,7 @@ function renderProp(h){
   [["Type",h.type],["Built",String(h.yr)],["Lot",h.lot],["Price/sqft",h.ppsf],["Est. value",money(h.zest)],["Est. rent",money(h.rent)+"/mo"]].forEach(([k,v]) => { const d = el("div","chip",v); d.insertBefore(el("small","",k), d.firstChild); c.appendChild(d); });
   b.appendChild(c);
   const o = el("div","pbox"); o.appendChild(el("h4","","Owner (lead info)"));
-  [["Name",h.owner],["Est. equity",h.equity],["Est. taxes",h.tax]].forEach(([k,v]) => { const d = el("div"); d.appendChild(el("span","",k)); d.appendChild(el("b","",v)); o.appendChild(d); });
+  [["Name",h.owner],["Phone",h.phone],["Local time",localTime(h).txt],["Est. equity",h.equity],["Mortgage",h.balance ? money(h.balance) + " @ " + h.rate + "%" : "Paid off"],["Est. taxes",h.tax]].forEach(([k,v]) => { const d = el("div"); d.appendChild(el("span","",k)); d.appendChild(el("b","",v)); o.appendChild(d); });
   b.appendChild(o);
   const hs = el("div","pbox"); hs.appendChild(el("h4","","Price & listing history"));
   h.hist.forEach(x => { const d = el("div"); d.appendChild(el("span","",x[0] + " · " + x[1])); d.appendChild(el("b","",x[2])); hs.appendChild(d); });
@@ -277,7 +317,7 @@ function renderProp(h){
   b.appendChild(el("div","sim","Fictional data for practice. Not a real listing."));
 }
 function propLine(h){
-  return `${h.addr}, ${h.city} ${h.st}. ${h.beds} bd, ${h.baths} ba, ${h.sqft} sqft, built ${h.yr}, ${h.type}. Est. value ${money(h.zest)}, est. rent ${money(h.rent)}/mo. Status: ${h.status}` + (h.price ? `, asking ${money(h.price)}` : "") + (h.dom ? `, ${h.dom} days on market` : "") + `. Owner name: ${h.owner}.`;
+  return `${h.addr}, ${h.city} ${h.st}. ${h.beds} bd, ${h.baths} ba, ${h.sqft} sqft, built ${h.yr}, ${h.type}. Est. value ${money(h.zest)}, est. rent ${money(h.rent)}/mo. Status: ${h.status}` + (h.price ? `, asking ${money(h.price)}` : "") + (h.dom ? `, ${h.dom} days on market` : "") + `. Owner name: ${h.owner}. Mortgage balance about ${money(h.balance)} at ${h.rate}%, owned about ${2026 - h.loanYr} years.`;
 }
 $("ptoggle").onclick = () => $("pbody").classList.toggle("hide");
 
@@ -379,6 +419,17 @@ function extendProp(h, p){
     "Cooling: " + pick(["Central air","Window units","None"]), "Parking: " + pick(["2-car garage","Driveway","1-car garage"]), "Basement: " + pick(["Finished","Unfinished","None"]),
     "HOA: " + pick(["None","$45/mo"]), "Roof: " + pick(["Asphalt shingle (updated)","Asphalt shingle (original)","Unknown"]), "Parcel #: " + Math.floor(rnd(1e7,9e7)) + "-" + Math.floor(rnd(100,999))];
   h.walk = Math.floor(rnd(25,85)); h.tr = Math.floor(rnd(10,60));
+
+  const YRS = {fsbo:8, expired:6, investor:4, busy:6.6, hasagent:8.5, hesitant:8, notint:11.8}[p] || 7;
+  const buy = r1000(z*rr(.45,.75)), L = buy*(Math.random()<.8 ? .8 : .9), rt = rr(2.75,7), mr = rt/1200, pm = YRS*12;
+  const paid = (p === "notint" || p === "hasagent") && Math.random() < .2;
+  h.rate = rt.toFixed(2); h.loanYr = 2026 - Math.round(YRS); h.balance = paid ? 0 : Math.round(L*(Math.pow(1+mr,360)-Math.pow(1+mr,pm))/(Math.pow(1+mr,360)-1)/1000)*1000;
+  h.equityN = z - h.balance; h.equity = money(h.equityN) + " (" + Math.round(h.equityN/z*100) + "%)";
+  h.hist.forEach(x => { if (x[1] === "Sold") { x[0] = ago(Math.round(YRS*365)); x[2] = money(buy); } });
+  h.phone = "(" + h.ac + ") 555-01" + String(ri(0,99)).padStart(2,"0");
+  h.source = {fsbo:"FSBO website listing", expired:"MLS expired list", investor:"Absentee / landlord list"}[p] || "Homeowner farm list";
+  h.tries = Array.from({length: ri(0,3)}, (_, i) => [ago(ri(2,25)), pick(NOTES)]).sort(() => 0);
+  h.coach = COACH[p] || COACH.fsbo;
   return h;
 }
 function renderListing(h){
@@ -394,6 +445,20 @@ function renderListing(h){
   const g = el("div","g3"); [h.type, "Built in " + h.yr, h.lot + " lot", money(h.zest) + " value est.", h.ppsf, money(h.rent) + " est. rent"].forEach(t => g.appendChild(el("div","",t))); main.appendChild(g);
 
   const lead = el("div","leadbox"); lead.appendChild(el("b","","Lead notes: ")); lead.appendChild(document.createTextNode(h.notes + " Owner of record: " + h.owner + ". Est. equity " + h.equity + ".")); main.appendChild(lead);
+
+  const lt = localTime(h), li = el("div","sec"); li.appendChild(el("h3","","Lead info"));
+  const tb = document.createElement("table"); tb.className = "tbl";
+  [["Owner",h.owner],["Phone",h.phone],["Local time",lt.txt + (lt.ok ? "  ✔ OK to call (8 AM to 9 PM)" : "  ✖ Outside calling hours: do not call")],["DNC check","Scrubbed: clear"],["Lead source",h.source],
+   ["Mortgage",h.balance ? money(h.balance) + " at " + h.rate + "% (since " + h.loanYr + ")" : "Paid off"],["Estimated equity",h.equity]].forEach(([a,b]) => { const r = tb.insertRow(); r.insertCell().textContent = a; r.insertCell().textContent = b; });
+  li.appendChild(tb);
+  li.appendChild(el("p","sub", h.tries.length ? "Previous attempts:" : "No previous attempts. This is the first call."));
+  if (h.tries.length) { const u = el("ul","fl"); u.style.columns = "1"; h.tries.forEach(x => u.appendChild(el("li","",x[0] + ": " + x[1]))); li.appendChild(u); }
+  main.appendChild(li);
+  const pl = el("div","leadbox"); pl.style.background = "#e8f4ec"; pl.style.borderColor = "#9ccdb1"; pl.style.marginTop = "16px";
+  pl.appendChild(el("b","","Your game plan (beginner)")); const cc = h.coach;
+  [["Goal", cc.goal],["Opener", "\"" + cc.open + "\""],["Questions", cc.qs.join("  |  ")],["Watch out", cc.watch]].forEach(([a,b]) => { const p2 = el("div","",""); p2.style.marginTop = "6px"; p2.appendChild(el("b","",a + ": ")); p2.appendChild(document.createTextNode(b)); pl.appendChild(p2); });
+  main.appendChild(pl);
+
 
   const sec = (title) => { const s = el("div","sec"); s.appendChild(el("h3","",title)); main.appendChild(s); return s; };
   let s = sec("Home value");
