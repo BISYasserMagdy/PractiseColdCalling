@@ -17,7 +17,7 @@
 :root{--bg:#eef1f4;--ink:#16202b;--mute:#5d6b79;--card:#fff;--line:#d5dce3;--go:#1f8a5b;--end:#c2412d;--you:#dbe7f3}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;min-height:100vh}
-main{max-width:640px;margin:0 auto;padding:24px 16px 48px}
+main{max-width:980px;margin:0 auto;padding:24px 16px 48px}
 h1{font-size:28px;font-weight:800;margin:8px 0 4px}
 p.sub{color:var(--mute);margin:0 0 20px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
@@ -28,7 +28,27 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .go{background:var(--go);color:#fff;width:100%}
 .end{background:var(--end);color:#fff}
 .ghost{background:#e6ebf0;color:var(--ink)}
-#call{display:none}
+#call{display:none;grid-template-columns:1fr;gap:14px;align-items:start}
+@media(min-width:860px){#call{grid-template-columns:340px 1fr}#prop{position:sticky;top:16px}}
+#setup,#hist,#fb,#again{max-width:640px;margin-left:auto;margin-right:auto}
+.ph{height:120px;border-radius:10px;background:linear-gradient(135deg,#7fa88f,#4f7a63);display:flex;align-items:flex-end;padding:8px;color:#fff;font-size:12px;font-weight:600}
+.ph span{background:rgba(0,0,0,.45);border-radius:6px;padding:3px 8px}
+.pst{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:10px 0 4px;color:#fff;background:#0b6bcb}
+.pst.red{background:#c2412d}.pst.gray{background:#5d6b79}.pst.amb{background:#b7791f}
+.pp{font-size:30px;font-weight:800;line-height:1.1}
+.pa{color:var(--mute);margin:2px 0 10px;font-size:14px}
+.pstats{display:flex;gap:18px;margin-bottom:10px}
+.pstats b{display:block;font-size:20px;font-weight:800}
+.pstats span{font-size:12px;color:var(--mute)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.chip{background:#eef1f4;border-radius:8px;padding:7px 9px;font-size:13px}
+.chip small{display:block;color:var(--mute);font-size:11px}
+.pbox{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px;font-size:13px;line-height:1.45}
+.pbox h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+.pbox div{display:flex;justify-content:space-between;gap:8px}
+.sim{font-size:11px;color:var(--mute);margin-top:8px}
+#ptoggle{display:none;width:100%;margin-bottom:8px}
+@media(max-width:859px){#ptoggle{display:block}#pbody.hide{display:none}}
 .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
 #who{font-weight:800;font-size:20px}
 #status{color:var(--mute);font-size:14px}
@@ -85,19 +105,25 @@ h3{margin:16px 0 6px;font-size:16px}
     <div class="hint" id="iosHint">To install on iPhone: tap Share, then "Add to Home Screen".</div>
   </section>
 
-  <section class="card" id="call">
-    <div class="bar">
-      <div><div id="who"></div><div id="status"><span class="dot" id="dot"></span><span id="st">Connecting</span></div></div>
-      <div id="timer">00:00</div>
-    </div>
-    <div id="log" aria-live="polite"></div>
-    <div class="row">
-      <input type="text" id="txt" placeholder="Type instead of speaking" autocomplete="off">
-      <button class="ghost" id="send">Send</button>
-    </div>
-    <div class="row">
-      <button class="ghost" id="mic">Pause mic</button>
-      <button class="end" id="hang" style="margin-left:auto">End call</button>
+  <section id="call">
+    <aside class="card" id="prop">
+      <button class="ghost" id="ptoggle">Hide / show property info</button>
+      <div id="pbody"></div>
+    </aside>
+    <div class="card" id="callpane">
+      <div class="bar">
+        <div><div id="who"></div><div id="status"><span class="dot" id="dot"></span><span id="st">Connecting</span></div></div>
+        <div id="timer">00:00</div>
+      </div>
+      <div id="log" aria-live="polite"></div>
+      <div class="row">
+        <input type="text" id="txt" placeholder="Type instead of speaking" autocomplete="off">
+        <button class="ghost" id="send">Send</button>
+      </div>
+      <div class="row">
+        <button class="ghost" id="mic">Pause mic</button>
+        <button class="end" id="hang" style="margin-left:auto">End call</button>
+      </div>
     </div>
   </section>
 
@@ -123,7 +149,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SR) $("warn").style.display = "block";
 
 const NAMES = {fsbo:"Mike",expired:"Linda",busy:"Dave",hasagent:"Karen",hesitant:"Priya",notint:"Tom",investor:"Carlos"};
-let msgs = [], persona, level, rec, micOn = true, speaking = false, busy = false, ended = false, t0, tick, voice;
+let prop, msgs = [], persona, level, rec, micOn = true, speaking = false, busy = false, ended = false, t0, tick, voice;
 
 function pickVoice(){
   const v = speechSynthesis.getVoices().filter(x => /en-(US|CA)/i.test(x.lang));
@@ -136,6 +162,70 @@ function add(text, cls){
   $("log").appendChild(d); $("log").scrollTop = 1e9;
 }
 function status(s, on){ $("st").textContent = s; $("dot").classList.toggle("on", !!on); }
+
+// ---- Simulated property listing (fictional data, for practice only) ----
+const HOMES = [
+  {addr:"7929 E Shearer Rd", city:"Indianapolis", st:"IN", zip:"46219", beds:3, baths:1.5, sqft:1537, yr:1957, lot:"0.28 acres", zest:155000, rent:1582, type:"Single Family"},
+  {addr:"412 Maple Ridge Dr", city:"Columbus", st:"OH", zip:"43229", beds:4, baths:2.5, sqft:2105, yr:1994, lot:"0.21 acres", zest:318000, rent:2350, type:"Single Family"},
+  {addr:"1806 Oakwood Ln", city:"Charlotte", st:"NC", zip:"28208", beds:3, baths:2, sqft:1480, yr:1968, lot:"0.19 acres", zest:289000, rent:2100, type:"Single Family"},
+  {addr:"93 Birch Hollow Ct", city:"Tampa", st:"FL", zip:"33610", beds:3, baths:2, sqft:1620, yr:1986, lot:"0.17 acres", zest:342000, rent:2450, type:"Single Family"},
+  {addr:"2210 Prairie View Rd", city:"Kansas City", st:"MO", zip:"64134", beds:2, baths:1, sqft:1120, yr:1952, lot:"0.24 acres", zest:164000, rent:1380, type:"Single Family"},
+  {addr:"5517 Lakeshore Ave", city:"Cleveland", st:"OH", zip:"44102", beds:4, baths:2, sqft:1890, yr:1929, lot:"0.12 acres", zest:196000, rent:1750, type:"Multi-family"},
+  {addr:"640 Cedar Crest Way", city:"Phoenix", st:"AZ", zip:"85017", beds:4, baths:2, sqft:1760, yr:1976, lot:"0.20 acres", zest:402000, rent:2650, type:"Single Family"},
+  {addr:"88 Willow Bend", city:"Hamilton", st:"ON", zip:"L8K 4B2", beds:3, baths:1.5, sqft:1350, yr:1972, lot:"0.11 acres", zest:610000, rent:2900, type:"Single Family"},
+];
+const LAST = ["Johnson","Miller","Davis","Wilson","Anderson","Taylor","Moore","Clark","Walker","Hall"];
+const money = n => "$" + Math.round(n).toLocaleString("en-US");
+const r1000 = n => Math.round(n/1000)*1000;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const ago = d => new Date(Date.now() - d*864e5).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+
+function makeProp(p){
+  const h = Object.assign({}, pick(HOMES)), z = h.zest;
+  h.owner = NAMES[p] + " " + pick(LAST);
+  h.ppsf = money(z/h.sqft) + "/sqft"; h.tax = money(z*0.011) + "/yr";
+  h.hist = []; h.notes = ""; h.status = "Off market"; h.cls = "gray"; h.price = null; h.dom = null;
+  if (p === "fsbo") { h.status = "For sale by owner"; h.cls = ""; h.price = r1000(z*1.08); h.dom = 34 + Math.floor(Math.random()*40);
+    h.hist = [[ago(h.dom), "Listed for sale (FSBO)", money(h.price)]];
+    h.notes = "Listed by owner on a FSBO site. Phone number from the listing. Owner wants to avoid commission."; }
+  else if (p === "expired") { h.status = "Listing expired"; h.cls = "red"; const l = r1000(z*1.12); h.price = r1000(z*1.04); h.dom = 90;
+    h.hist = [[ago(3), "Listing removed (expired)", "—"], [ago(40), "Price change", money(h.price)], [ago(93), "Listed for sale", money(l)]];
+    h.notes = "Expired MLS listing, 90 days, one price drop. Previous agent did not sell."; }
+  else if (p === "investor") { h.status = "Off market · Rental"; h.cls = "amb"; h.hist = [[ago(1500), "Sold", money(z*0.55)]];
+    h.notes = "Rental property. Equity is high. Value up over the last 3 years."; }
+  else if (p === "busy") { h.hist = [[ago(2400), "Sold", money(z*0.6)]]; h.notes = "Owner-occupied. Contractor. Hard to reach during the day."; }
+  else if (p === "hasagent") { h.hist = [[ago(3100), "Sold", money(z*0.5)]]; h.notes = "Owner-occupied 8+ years. Possible long-term seller. May already work with an agent."; }
+  else if (p === "hesitant") { h.hist = [[ago(2900), "Sold", money(z*0.55)]]; h.notes = "Owner-occupied. Asked about the market on a past online form. Unsure about timing."; }
+  else { h.hist = [[ago(4300), "Sold", money(z*0.42)]]; h.notes = "Owner-occupied 10+ years. Lots of equity. No known plans to sell."; }
+  h.equity = money(z*0.7);
+  return h;
+}
+function renderProp(h){
+  const b = $("pbody"); b.textContent = "";
+  const ph = el("div","ph"); ph.appendChild(el("span","","Street view (simulation)")); b.appendChild(ph);
+  b.appendChild(el("div","pst " + h.cls, h.status.toUpperCase()));
+  b.appendChild(el("div","pp", money(h.price || h.zest)));
+  b.appendChild(el("div","pa", h.addr + ", " + h.city + ", " + h.st + " " + h.zip));
+  const s = el("div","pstats");
+  [[h.beds,"beds"],[h.baths,"baths"],[h.sqft.toLocaleString("en-US"),"sqft"]].forEach(([v,l]) => { const d = el("div"); d.appendChild(el("b","",String(v))); d.appendChild(el("span","",l)); s.appendChild(d); });
+  b.appendChild(s);
+  const c = el("div","chips");
+  [["Type",h.type],["Built",String(h.yr)],["Lot",h.lot],["Price/sqft",h.ppsf],["Est. value",money(h.zest)],["Est. rent",money(h.rent)+"/mo"]].forEach(([k,v]) => { const d = el("div","chip",v); d.insertBefore(el("small","",k), d.firstChild); c.appendChild(d); });
+  b.appendChild(c);
+  const o = el("div","pbox"); o.appendChild(el("h4","","Owner (lead info)"));
+  [["Name",h.owner],["Est. equity",h.equity],["Est. taxes",h.tax]].forEach(([k,v]) => { const d = el("div"); d.appendChild(el("span","",k)); d.appendChild(el("b","",v)); o.appendChild(d); });
+  b.appendChild(o);
+  const hs = el("div","pbox"); hs.appendChild(el("h4","","Price & listing history"));
+  h.hist.forEach(x => { const d = el("div"); d.appendChild(el("span","",x[0] + " · " + x[1])); d.appendChild(el("b","",x[2])); hs.appendChild(d); });
+  if (h.dom) { const d = el("div"); d.appendChild(el("span","","Days on market")); d.appendChild(el("b","",String(h.dom))); hs.appendChild(d); }
+  b.appendChild(hs);
+  const n = el("div","pbox"); n.appendChild(el("h4","","Your notes")); n.appendChild(el("div","",h.notes)); b.appendChild(n);
+  b.appendChild(el("div","sim","Fictional data for practice. Not a real listing."));
+}
+function propLine(h){
+  return `${h.addr}, ${h.city} ${h.st}. ${h.beds} bd, ${h.baths} ba, ${h.sqft} sqft, built ${h.yr}, ${h.type}. Est. value ${money(h.zest)}, est. rent ${money(h.rent)}/mo. Status: ${h.status}` + (h.price ? `, asking ${money(h.price)}` : "") + (h.dom ? `, ${h.dom} days on market` : "") + `. Owner name: ${h.owner}.`;
+}
+$("ptoggle").onclick = () => $("pbody").classList.toggle("hide");
 
 async function api(body){
   const r = await fetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
@@ -156,7 +246,7 @@ function speak(text, done){
 async function turn(){
   busy = true; stopRec(); status("Customer thinking");
   try {
-    let text = await api({mode:"call", persona, level, messages: msgs});
+    let text = await api({mode:"call", persona, level, property: propLine(prop), messages: msgs});
     const hang = /\[HANGUP\]/i.test(text);
     text = text.replace(/\[HANGUP\]/ig, "").trim() || "Goodbye.";
     msgs.push({role:"model", text}); add(text, "c");
@@ -186,8 +276,9 @@ function stopRec(){ if (rec) { rec.onend = null; try { rec.abort(); } catch {} }
 
 $("start").onclick = () => {
   persona = $("persona").value; level = $("level").value;
-  $("setup").style.display = "none"; $("call").style.display = "block";
+  $("setup").style.display = "none"; $("call").style.display = "grid";
   $("who").textContent = NAMES[persona] + " (" + $("level").selectedOptions[0].text + ")";
+  prop = makeProp(persona); renderProp(prop);
   t0 = Date.now();
   tick = setInterval(() => { const s = Math.floor((Date.now()-t0)/1000); $("timer").textContent = String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }, 1000);
   msgs = [{role:"user", text:"[The phone rings and you pick up. Say hello the way you naturally would.]", hidden:true}];
@@ -215,7 +306,7 @@ function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.c
 async function getFeedback(){
   $("retry").style.display = "none"; $("fb").textContent = "Analyzing your call…";
   try {
-    const t = await api({mode:"feedback", persona: curRec.persona, level: curRec.level, messages: curRec.msgs});
+    const t = await api({mode:"feedback", persona: curRec.persona, level: curRec.level, property: curRec.prop, messages: curRec.msgs});
     curRec.feedback = t; upsert(curRec); $("fb").textContent = t;
   } catch (e) {
     $("fb").textContent = "Couldn't get feedback: " + e.message + "\nThe call was saved to History.";
@@ -228,7 +319,7 @@ async function endCall(){
   if (ended) return; ended = true; stopRec(); speechSynthesis.cancel(); clearInterval(tick);
   $("call").style.display = "none"; $("fb").style.display = "block"; $("again").style.display = "flex";
   if (msgs.filter(m => !m.hidden && m.role === "user").length < 1) { $("fb").textContent = "Call ended before you said anything."; return; }
-  curRec = {id: Date.now(), ts: Date.now(), persona, level, dur: Math.floor((Date.now() - t0) / 1000), msgs, feedback: null};
+  curRec = {id: Date.now(), ts: Date.now(), persona, level, prop: propLine(prop), dur: Math.floor((Date.now() - t0) / 1000), msgs, feedback: null};
   upsert(curRec);
   await getFeedback();
 }
@@ -258,13 +349,14 @@ function renderDetail(id){
   const back = el("button", "ghost", "← All calls"); back.onclick = renderList; d.appendChild(back);
   d.appendChild(el("h3", "", NAMES[rec.persona] + " (" + LEVELS[rec.level] + ") · " + scoreOf(rec.feedback)));
   d.appendChild(el("div", "sub", new Date(rec.ts).toLocaleString() + " · " + fmtDur(rec.dur)));
+  if (rec.prop) d.appendChild(el("div", "sub", rec.prop));
   d.appendChild(el("h3", "", "Feedback"));
   const fb = el("div", "txt", rec.feedback || "No feedback saved for this call."); d.appendChild(fb);
   if (!rec.feedback) {
     const r = el("button", "ghost", "Get feedback"); r.style.marginTop = "8px";
     r.onclick = async () => {
       fb.textContent = "Analyzing your call…"; r.disabled = true;
-      try { rec.feedback = await api({mode:"feedback", persona: rec.persona, level: rec.level, messages: rec.msgs}); upsert(rec); renderDetail(rec.id); }
+      try { rec.feedback = await api({mode:"feedback", persona: rec.persona, level: rec.level, property: rec.prop, messages: rec.msgs}); upsert(rec); renderDetail(rec.id); }
       catch (e) { fb.textContent = "Couldn't get feedback: " + e.message; r.disabled = false; }
     };
     d.appendChild(r);

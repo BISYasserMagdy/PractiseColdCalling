@@ -24,6 +24,7 @@ What went well: (2-4 short points)
 Mistakes: (2-4 short points, quote what the caller said)
 Objection handling: how each objection was handled and what was better
 Better lines to say: (2-3 rewritten sentences the caller could use)
+Property use: did the caller use the property facts (price, days on market, history, equity) smartly or ignore them.
 Next call goal: one concrete thing to practice.`;
 
 export default async function handler(req, res) {
@@ -32,16 +33,17 @@ export default async function handler(req, res) {
   if (!key) return res.status(500).json({ error: "GEMINI_API_KEY is not set" });
 
   const { mode, persona, level, messages } = req.body || {};
+  const property = String((req.body || {}).property || "").slice(0, 600);
   if (!Array.isArray(messages) || !messages.length) return res.status(400).json({ error: "messages required" });
 
   let system, contents, temperature;
   if (mode === "feedback") {
     system = FEEDBACK;
     const t = messages.filter(m => !m.hidden).map(m => `${m.role === "user" ? "Caller" : "Customer"}: ${m.text}`).join("\n");
-    contents = [{ role: "user", parts: [{ text: `Persona: ${persona}, level: ${level}\n\nTranscript:\n${t}` }] }];
+    contents = [{ role: "user", parts: [{ text: `Persona: ${persona}, level: ${level}\nProperty info shown to the caller: ${property || "n/a"}\n\nTranscript:\n${t}` }] }];
     temperature = 0.5;
   } else {
-    system = `${BASE}\n${PERSONAS[persona] || PERSONAS.fsbo}\n${LEVELS[level] || LEVELS.medium}`;
+    system = `${BASE}\n${PERSONAS[persona] || PERSONAS.fsbo}\n${LEVELS[level] || LEVELS.medium}` + (property ? `\nThis is YOUR home and the caller is calling about it. Stay consistent with these facts and only reveal details naturally if asked: ${property}` : "");
     contents = messages.slice(-30).map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: String(m.text).slice(0, 1500) }] }));
     temperature = 1;
   }
