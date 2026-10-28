@@ -173,6 +173,7 @@ h3{margin:16px 0 6px;font-size:16px}
       </div>
       <div class="row">
         <button class="ghost" id="mic">Pause mic</button>
+        <label class="sub" style="display:flex;align-items:center;gap:6px;margin:0">Wait <select id="wait" style="padding:8px;border-radius:8px;border:1px solid var(--line)"><option value="1500">1.5s</option><option value="2500">2.5s</option><option value="4000">4s</option><option value="6000">6s</option></select></label>
         <button class="ghost" id="guideOpen2">Guide</button>
         <button class="ghost" id="listOpen">Listing</button>
         <button class="end" id="hang" style="margin-left:auto">End call</button>
@@ -546,20 +547,34 @@ async function turn(){
 
 function userSays(text){
   text = text.trim(); if (!text || busy || ended) return;
-  speechSynthesis.cancel(); stopRec();
+  clearTimeout(silenceT); speechSynthesis.cancel(); stopRec();
   msgs.push({role:"user", text}); add(text, "u"); turn();
 }
 
+let buf = "", silenceT = null;
+let waitMs = 2500; try { waitMs = +localStorage.getItem("cc_wait") || 2500; } catch {}
+function flush(){
+  clearTimeout(silenceT); const t = buf.trim(); buf = ""; $("txt").value = "";
+  if (t) userSays(t);
+}
 function listen(){
   if (!SR || !micOn || ended || busy || speaking) { status(micOn ? "Your turn" : "Mic paused"); return; }
-  rec = new SR(); rec.lang = "en-US"; rec.interimResults = false; rec.continuous = false;
-  let got = false;
-  rec.onresult = e => { got = true; userSays(e.results[0][0].transcript); };
-  rec.onend = () => { if (!got && micOn && !ended && !busy && !speaking) setTimeout(listen, 200); };
+  rec = new SR(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+  buf = ""; clearTimeout(silenceT);
+  rec.onresult = e => {
+    let t = "";
+    for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript + " ";
+    buf = t.trim(); $("txt").value = buf; status("Listening… " + (buf ? "(sends after a short pause)" : "your turn"), true);
+    clearTimeout(silenceT); silenceT = setTimeout(flush, waitMs);
+  };
+  rec.onend = () => {
+    if (buf.trim()) { flush(); return; }
+    if (micOn && !ended && !busy && !speaking) setTimeout(listen, 200);
+  };
   rec.onerror = e => { if (e.error === "not-allowed") { micOn = false; status("Mic blocked — type instead"); } };
   try { rec.start(); status("Listening… your turn", true); } catch {}
 }
-function stopRec(){ if (rec) { rec.onend = null; try { rec.abort(); } catch {} } }
+function stopRec(){ clearTimeout(silenceT); if (rec) { rec.onend = null; try { rec.abort(); } catch {} } }
 
 $("start").onclick = () => {
   persona = $("persona").value; level = $("level").value;
@@ -582,6 +597,8 @@ $("mic").onclick = () => {
   micOn ? listen() : (stopRec(), status("Mic paused"));
 };
 $("hang").onclick = endCall;
+$("wait").value = String(waitMs); if (!$("wait").value) $("wait").value = "2500";
+$("wait").onchange = () => { waitMs = +$("wait").value; try { localStorage.setItem("cc_wait", waitMs); } catch {} };
 
 // ---- History (stored on this device only) ----
 const HKEY = "cc_history_v1";
