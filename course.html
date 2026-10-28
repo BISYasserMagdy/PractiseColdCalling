@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cold Calling Course</title>
+<meta name="theme-color" content="#1f8a5b">
+<link rel="icon" href="/icons/icon-192.png">
+<style>
+:root{--bg:#eef1f4;--ink:#16202b;--mute:#5d6b79;--card:#fff;--line:#d5dce3;--go:#1f8a5b;--end:#c2412d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.7}
+header{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0;flex:1}
+button,a.btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:#e6ebf0;color:var(--ink);text-decoration:none;display:inline-block}
+button.go{background:var(--go);color:#fff}button:disabled{opacity:.5;cursor:default}
+.wrap{max-width:1000px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:860px){.wrap{grid-template-columns:260px 1fr}}
+nav{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;align-self:start}
+nav button{display:flex;gap:8px;width:100%;text-align:left;background:none;padding:8px;font-weight:500;font-size:14px;align-items:flex-start}
+nav button.on{background:#e8f4ec;font-weight:700}
+nav .ck{width:18px;flex:none;color:var(--go)}
+.bar{height:8px;background:#e3e8ed;border-radius:6px;overflow:hidden;margin:6px 0 10px}.bar i{display:block;height:100%;background:var(--go);width:0}
+article{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+article h2{margin:0 0 4px;font-size:24px}
+.tag{color:var(--go);font-weight:700;font-size:13px}
+.ar{direction:rtl;text-align:right}
+.ar ul,.ar ol{padding-right:22px;padding-left:0}
+.en{direction:ltr;text-align:left;background:#f1f6fb;border-left:4px solid #5b8fc9;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:15px}
+.en b{color:#2a5f9e}
+.tip{background:#fff3cd;border:1px solid #e6cf85;border-radius:10px;padding:10px 14px;margin:12px 0}
+.task{background:#e8f4ec;border:1px solid #9ccdb1;border-radius:10px;padding:10px 14px;margin:14px 0}
+.quiz{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:16px 0;direction:ltr;text-align:left}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);margin:6px 0;font-weight:400}
+.opt.ok{background:#d9f2e3;border-color:var(--go)}.opt.no{background:#f8d9d4;border-color:var(--end)}
+.why{font-size:14px;color:var(--mute);margin-top:4px}
+.foot{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%;font-size:14px;direction:ltr}td,th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+</style>
+</head>
+<body>
+<header><a class="btn" href="/">← Back to practice</a><h1>كورس Cold Calling للـ Realtor: من الصفر</h1></header>
+<div class="wrap"><nav><b id="pt">التقدم</b><div class="bar"><i id="pb"></i></div><div id="nav"></div></nav><article id="art"></article></div>
+<script>
+const L = [
+{t:"من هو الـ Real Estate Agent؟", b:`
+<p>الـ <b>real estate agent</b> هو شخص مرخّص بيساعد الناس يبيعوا أو يشتروا عقارات، وبياخد أجره من <b>commission</b> (نسبة من سعر البيع) لما الصفقة تتم.</p>
+<ul><li><b>Agent:</b> مرخّص، بيشتغل تحت broker.</li><li><b>Broker:</b> مستوى ترخيص أعلى، بيدير الشركة (brokerage) ومسؤول قانونياً عن الـ agents.</li><li><b>Realtor®:</b> agent عضو في الجمعية الوطنية NAR وبيلتزم بكود أخلاقيات. الكلمة علامة تجارية، مش كل agent realtor.</li></ul>
+<p>كل ولاية ليها شروط ترخيص مختلفة (كورس + امتحان + شغل تحت broker). التراخيص بتختلف بين الولايات وكندا، فراجع لجنة العقارات في الولاية قبل أي شغل فعلي.</p>
+<div class="tip">ملحوظة: التفاوض باسم عميل أو تقديم نصيحة عقارية محتاج ترخيص. لو إنت لسه متدرب أو شغال كـ ISA/مساعد، اتأكد من الـ broker إيه المسموح لك تعمله.</div>`,
+ task:"اكتب بالإنجليزي جملة واحدة تعرّف بيها نفسك كأنك agent: اسمك، الشركة، وبتساعد مين.",
+ q:{q:"مين المسؤول قانونياً عن الـ agents في الشركة؟",o:["الـ Broker","العميل","الـ MLS","الـ Realtor فقط"],a:0,why:"الـ broker بيدير الـ brokerage وبيتحمل المسؤولية."}},
+
+{t:"إزاي بيتباع بيت؟ (الصورة الكاملة)", b:`
+<p>لازم تفهم المراحل عشان تتكلم بثقة على التليفون:</p>
+<ol><li><b>Listing appointment:</b> الـ agent بيقابل المالك، بيعرض الـ CMA وخطة التسويق ويوقّع <b>listing agreement</b>.</li><li><b>التجهيز والتصوير:</b> نضافة وتصليحات بسيطة وصور احترافية.</li><li><b>الـ MLS والتسويق:</b> الـ MLS قاعدة بيانات العقارات اللي كل الـ agents بيشوفوها. بعدين إعلانات وزيارات (showings).</li><li><b>العروض (offers) والتفاوض:</b> السعر وشروط زي الفحص والتمويل.</li><li><b>Under contract:</b> فحص (inspection) وتقييم (appraisal) وتمويل.</li><li><b>Closing:</b> التوقيع النهائي وتسليم المفاتيح.</li></ol>
+<p>غالباً من الإدراج لحد الـ closing بياخد شهرين لأربعة، لكن بيختلف حسب السوق.</p>
+<div class="en"><b>You'll say:</b> "I help homeowners understand what their home could sell for and what they'd actually take home."</div>`,
+ task:"اشرح بصوتك (بالإنجليزي) مراحل البيع في 30 ثانية من غير ما تبص.",
+ q:{q:"إيه هو الـ MLS؟",o:["قاعدة بيانات عقارات يشوفها الـ agents","نوع قرض","اسم شركة","ضريبة"],a:0,why:"Multiple Listing Service: قاعدة بيانات مشتركة بين الـ agents."}},
+
+{t:"العمولة (Commission) و FSBO", b:`
+<p><b>Commission:</b> أجر الـ agent، نسبة من سعر البيع بتتخصم من فلوس المالك وقت الـ closing. بتتفاوض، ومش ثابتة. بعد تعديلات 2024 في أمريكا اتغيرت طريقة تعويض agent المشتري، والممارسات بتختلف حسب الولاية والشركة، فاسأل الـ broker.</p>
+<p><b>FSBO</b> = For Sale By Owner: المالك بيبيع بنفسه عشان يوفر العمولة.</p>
+<p>ليه المالك يتجنب العمولة؟ لأنه شايفها رقم كبير (آلاف الدولارات) وبيفتكر إن البيع سهل. وليه ممكن يحتاج agent؟ التسعير الصح، الوصول للمشترين، التفاوض، الورق القانوني، والوقت.</p>
+<p>على التليفون ماتقولش "أنا هاخد عمولة". ركّز على <b>net proceeds</b>: اللي هيستلمه المالك فعلاً بعد كل التكاليف.</p>
+<div class="en"><b>Say:</b> "Commission is negotiable. What matters is what you take home after everything. Can I show you the numbers?"</div>
+<table><tr><th>Sale price</th><th>Example: 5.5% total</th></tr><tr><td>$300,000</td><td>$16,500</td></tr><tr><td>$450,000</td><td>$24,750</td></tr></table>
+<p style="color:var(--mute);font-size:13px">أرقام توضيحية فقط.</p>`,
+ task:"اكتب رد بالإنجليزي على: \"Why should I pay you a commission?\" في 3 جمل.",
+ q:{q:"أفضل رد على \"What's your commission?\"",o:["أقولك نسبة ثابتة فوراً","أقول إنها تفاوضية وأتكلم عن الـ net","أرفض أرد","أقفل المكالمة"],a:1,why:"حوّل الكلام من النسبة للقيمة والـ net."}},
+
+{t:"أنواع الـ Leads", b:`
+<ul><li><b>FSBO:</b> مالك بيبيع بنفسه. مشاكله: مكالمات كتير من agents، عروض رخيصة، ورق.</li><li><b>Expired:</b> الإدراج خلص من غير بيع (غالباً التسعير أو التسويق). المالك متضايق.</li><li><b>Absentee / Investor:</b> المالك ساكن بعيد أو معاه عقار إيجار. الأرقام هي اللغة.</li><li><b>Past clients / Sphere:</b> ناس تعرفهم. أسهل وأعلى تحويل.</li><li><b>Farm area:</b> منطقة بتركّز عليها وبتتصل بسكانها.</li></ul>
+<p>كل نوع ليه مدخل مختلف. جرّب كل persona في التطبيق وشوف الفرق.</p>`,
+ task:"اختار lead واحد واكتب افتتاحية مختلفة له من قلبك.",
+ q:{q:"إيه الـ Expired listing؟",o:["إدراج انتهى من غير بيع","بيت اتباع","عقد إيجار","عقار مهجور"],a:0,why:"الإدراج انتهت مدته من غير ما يتباع."}},
+
+{t:"ليه Cold Calling؟ والقانون", b:`
+<p>الـ cold call بيخليك تتواصل مع ناس ماتعرفكش. هدفه <b>خطوة تالية</b> (ميعاد أو إذن بالمتابعة)، مش بيع في المكالمة.</p>
+<p>عشان تبقى آمن قانونياً (مش استشارة قانونية، راجع الـ broker ومختص):</p>
+<ul><li>أمريكا: <b>National Do Not Call Registry</b> وقانون <b>TCPA</b>. نضّف القوائم (scrub).</li><li>اتصل بين <b>8 الصبح و9 بالليل</b> بتوقيت اللي بتكلمه.</li><li>الـ autodialer والرسائل محتاجة موافقة غالباً.</li><li>كندا: National DNCL وقواعد CRTC.</li><li>لو قال "لا تتصل بي تاني": سجّله DNC فوراً.</li><li>لو إنت برا أمريكا: الـ agent/الـ brokerage الأمريكي هو المسؤول عن الامتثال، وماتشتغلش من غير اتفاق واضح.</li></ul>`,
+ task:"اكتب جملة تقولها لو حد قال \"remove me from your list\".",
+ q:{q:"أوقات الاتصال المسموحة في أمريكا؟",o:["أي وقت","8 ص – 9 م بتوقيت المستلم","6 ص – 6 م بتوقيتك","بالليل فقط"],a:1,why:"وتأكد من الـ DNC برضه."}},
+
+{t:"المصطلحات الأساسية (Glossary)", b:`
+<table><tr><th>Term</th><th>معناه</th></tr>
+<tr><td>CMA</td><td>تحليل أسعار بيوت مشابهة اتباعت قريب</td></tr>
+<tr><td>Comps</td><td>الـ comparable sales نفسها</td></tr>
+<tr><td>DOM</td><td>Days on Market: عدد أيام العرض</td></tr>
+<tr><td>Equity</td><td>قيمة البيت − الرهن المتبقي</td></tr>
+<tr><td>Net sheet</td><td>اللي المالك هيستلمه بعد كل التكاليف</td></tr>
+<tr><td>Listing agreement</td><td>عقد بين المالك والـ agent</td></tr>
+<tr><td>Escrow / Closing</td><td>طرف محايد يمسك الفلوس / التوقيع النهائي</td></tr>
+<tr><td>Contingency</td><td>شرط في العقد (فحص، تمويل)</td></tr>
+<tr><td>Absentee owner</td><td>مالك ساكن بعيد</td></tr>
+<tr><td>ISA</td><td>Inside Sales Agent: بيعمل المكالمات ويحجز مواعيد</td></tr>
+<tr><td>CRM</td><td>برنامج متابعة الـ leads</td></tr></table>`,
+ task:"اكتب كل مصطلح بجملة بالإنجليزي من عندك.",
+ q:{q:"إيه الـ Equity؟",o:["قيمة البيت ناقص الرهن","عمولة الـ agent","ضريبة العقار","سعر الإيجار"],a:0,why:"ببساطة اللي المالك يملكه فعلاً في البيت."}},
+
+{t:"التحضير قبل الاتصال", b:`
+<p>التحضير هو اللي بيفرّق. قبل كل مكالمة (الصفحة اللي في التطبيق بتدرّبك عليها):</p>
+<ol><li>اقرأ بيانات العقار: السعر، DOM، التاريخ، القيمة التقديرية.</li><li>اقرأ الـ lead info: المصدر، الرهن والـ equity، محاولات سابقة، والوقت عنده.</li><li>حدّد هدف واحد للمكالمة.</li><li>جهّز افتتاحية وسؤالين.</li><li>اقعد في مكان هادي، ومعاك مية، وابتسم قبل ما تتصل.</li></ol>
+<div class="tip">قاعدة: لو الوقت عنده برا 8 – 9، ماتتصلش.</div>`,
+ task:"افتح مكالمة في التطبيق، اقرأ صفحة العقار، واكتب هدفك وافتتاحيتك قبل الضغط على Dial.",
+ q:{q:"أول حاجة تعملها قبل الاتصال؟",o:["أتصل فوراً","أقرأ بيانات العقار والـ lead وأحدد هدف","أقفل التليفون","أبعت إيميل طويل"],a:1,why:"التحضير بيعطيك ثقة وتخصيص."}},
+
+{t:"الافتتاحية (Opener) والإذن", b:`
+<p>أول 10 ثواني بتحدد المكالمة تكمل ولا لأ. القالب: <b>اسمك + الشركة + سبب قصير + إذن</b>.</p>
+<div class="en"><b>Opener:</b> "Hi Mike, this is Yasser with ABC Realty. I saw your home on Maple Dr is for sale by owner. Did I catch you at a bad time?"</div>
+<ul><li>جملة قصيرة، صوت هادي، ابتسامة.</li><li>ماتقولش "just calling to…" ولا "to be honest".</li><li>لو قال مشغول: حدد ميعاد (بعد كام ساعة؟).</li></ul>
+<div class="en"><b>If busy:</b> "No problem, would 5 PM tomorrow work better?"</div>`,
+ task:"سجّل صوتك بتقول الافتتاحية 3 مرات واسمع نفسك.",
+ q:{q:"أحسن افتتاحية:",o:["اسم + شركة + سبب قصير + إذن","تاريخ الشركة","طلب الـ listing فوراً","قراءة script طويل"],a:0,why:"قصيرة ومحترمة."}},
+
+{t:"الأسئلة والاستماع", b:`
+<p>الـ agent الشاطر بيسأل أكتر ما بيتكلم (حوالي 60% استماع). الأسئلة بتكشف الدافع والتوقيت.</p>
+<div class="en"><b>Questions:</b><br>• "What's your timeline?"<br>• "What matters most: price, speed, or less hassle?"<br>• "What happened with the last listing?"<br>• "If it sold at your price, where would you move?"</div>
+<ul><li><b>Mirroring:</b> كرّر آخر كلمتين كسؤال.</li><li><b>Labeling:</b> "It sounds like you're frustrated."</li><li><b>Summarize:</b> لخّص كلامه قبل ما تقترح.</li><li><b>Silence:</b> اسأل واسكت.</li></ul>`,
+ task:"في مكالمتك الجاية اسأل 3 أسئلة على الأقل قبل أي pitch.",
+ q:{q:"إيه الـ Mirroring؟",o:["تكرار آخر كلمات العميل كسؤال","تقليد صوته","الكلام بسرعة","قطع الكلام"],a:0,why:"بيخليه يكمّل ويشرح أكتر."}},
+
+{t:"الاعتراضات (Objections)", b:`
+<p>الاعتراض مش رفض، ده سؤال متخفي. الصيغة: <b>Acknowledge → Ask → Offer</b>.</p>
+<div class="en"><b>"Not interested."</b> "Totally fair. Is it the timing, or you're not planning to sell?"</div>
+<div class="en"><b>"I have an agent."</b> "Glad you're covered. If that changes, are you open to a second opinion?"</div>
+<div class="en"><b>"How did you get my number?"</b> "Public records / your listing. I'll remove you if you prefer. One quick question first?"</div>
+<div class="en"><b>"I'll think about it."</b> "Of course. What part would you like to think over?"</div>
+<div class="tip">ماتجادلش ولا تدافع. وافق، اسأل، واعرض خطوة صغيرة.</div>`,
+ task:"اكتب ردك على 3 اعتراضات بأسلوبك، وبعدين جرّب كل واحد مع persona في التطبيق.",
+ q:{q:"أول خطوة في التعامل مع اعتراض؟",o:["Acknowledge","جادل","اقفل","اعرض خصم"],a:0,why:"اعترف بكلامه الأول."}},
+
+{t:"الإغلاق والمتابعة", b:`
+<p>اقفل بـ<b>خطوة تالية محددة</b>: اعرض اختيارين مش سؤال مفتوح.</p>
+<div class="en"><b>Close:</b> "I'd like to show you the numbers. I have Tuesday 4:00 or Wednesday 10:00. Which is better?"</div>
+<p>لو مفيش ميعاد: خد إذن للمتابعة، وسجّل التاريخ في الـ CRM.</p>
+<div class="en"><b>Voicemail:</b> "Hi Mike, Yasser with ABC Realty about your home on Maple Dr. I have a quick idea about your sale. I'll try you again tomorrow, or call me at 555-0100."</div>
+<ul><li>غالباً محتاج 8 محاولات أو أكتر على أسابيع.</li><li>كل تواصل لازم يضيف قيمة (comps جديدة، تغيّر سعر).</li></ul>`,
+ task:"اطلب ميعاد في 3 مكالمات متتالية بالتطبيق، وبعدين راجع الـ feedback.",
+ q:{q:"أفضل طريقة لطلب ميعاد؟",o:["اختيارين محددين","سؤال مفتوح","\"let me know\"","ماطلبش"],a:0,why:"بيسهّل القرار."}},
+
+{t:"خطة التدريب لـ 30 يوم", b:`
+<ul><li><b>أسبوع 1:</b> افتتاحيات + الأسئلة. 10 مكالمات يومياً، easy.</li><li><b>أسبوع 2:</b> الاعتراضات الأساسية (not interested، agent، commission)، medium.</li><li><b>أسبوع 3:</b> اقفل بميعاد، وجرّب FSBO و expired.</li><li><b>أسبوع 4:</b> hard + investor + busy. هدفك متوسط 8/10.</li></ul>
+<p>قيس نفسك: عدد المكالمات، عدد الأسئلة، هل استخدمت بيانات العقار، هل طلبت ميعاد. راجع الـ History بعد كل جلسة.</p>
+<p>بعد التدريب: كمل بكتب زي Fanatical Prospecting و Never Split the Difference، وتابع coaches زي Tom Ferry و Mike Ferry.</p>
+<div class="tip">أرقام الواقع قليلة (مواعيد قليلة لكل 100 اتصال)، فالنجاح في الاستمرارية.</div>`,
+ task:"حدّد مواعيد تدريبك الأسبوع الجاي، واكتب هدف رقمي واحد.",
+ q:{q:"إيه مفتاح النجاح في الـ cold calling؟",o:["الاستمرارية والمراجعة","موهبة فقط","script واحد","مكالمة واحدة طويلة"],a:0,why:"تدريب منتظم + مراجعة."}},
+];
+const K="cc_course_v1"; let done={}, cur=0;
+try{done=JSON.parse(localStorage.getItem(K))||{}}catch{}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(done))}catch{}};
+const $=id=>document.getElementById(id);
+function nav(){const n=$("nav");n.textContent="";L.forEach((l,i)=>{const b=document.createElement("button");b.className=i===cur?"on":"";
+  const c=document.createElement("span");c.className="ck";c.textContent=done[i]?"✔":"";b.appendChild(c);b.appendChild(document.createTextNode((i+1)+". "+l.t));b.onclick=()=>{cur=i;render();scrollTo(0,0)};n.appendChild(b)});
+  const k=Object.keys(done).length;$("pt").textContent="التقدم: "+k+"/"+L.length;$("pb").style.width=(k/L.length*100)+"%"}
+function render(){const l=L[cur],a=$("art");a.textContent="";
+  const tg=document.createElement("div");tg.className="tag";tg.textContent="Lesson "+(cur+1)+" of "+L.length;a.appendChild(tg);
+  const h=document.createElement("h2");h.textContent=l.t;a.appendChild(h);
+  const b=document.createElement("div");b.className="ar";b.innerHTML=l.b;a.appendChild(b);
+  const t=document.createElement("div");t.className="task ar";t.innerHTML="<b>تمرين:</b> ";t.appendChild(document.createTextNode(l.task));a.appendChild(t);
+  const q=document.createElement("div");q.className="quiz";const qq=document.createElement("b");qq.textContent="Quick check: "+l.q.q;q.appendChild(qq);
+  const w=document.createElement("div");w.className="why";const bs=l.q.o.map((x,j)=>{const o=document.createElement("button");o.className="opt";o.textContent=x;o.onclick=()=>{
+    bs.forEach(y=>y.disabled=true);bs[l.q.a].classList.add("ok");if(j!==l.q.a)o.classList.add("no");w.textContent=l.q.why;};q.appendChild(o);return o});q.appendChild(w);a.appendChild(q);
+  const f=document.createElement("div");f.className="foot";
+  const p=document.createElement("button");p.textContent="← Previous";p.disabled=cur===0;p.onclick=()=>{cur--;render();scrollTo(0,0)};
+  const m=document.createElement("button");m.className="go";m.textContent=done[cur]?"✔ Completed (undo)":"Mark complete";m.onclick=()=>{done[cur]?delete done[cur]:done[cur]=1;save();render()};
+  const n=document.createElement("button");n.textContent="Next →";n.disabled=cur===L.length-1;n.onclick=()=>{cur++;render();scrollTo(0,0)};
+  f.append(p,m,n);a.appendChild(f);nav()}
+render();
+</script>
+</body>
+</html>
