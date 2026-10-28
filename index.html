@@ -624,6 +624,7 @@ function renderList(){
   const box = $("hlist"); box.textContent = "";
   const a = loadH();
   if (!a.length) { box.appendChild(el("p", "sub", "No calls yet. Your finished calls will show up here.")); return; }
+  const ex = el("button","ghost","Export all (.txt)"); ex.style.marginBottom = "8px"; ex.onclick = () => dl("cold-call-history.txt", a.map(recText).join("\n\n==========\n\n")); box.appendChild(ex);
   a.forEach(rec => {
     const b = el("button", "item");
     const l = el("div"); l.appendChild(document.createTextNode(NAMES[rec.persona] + " · " + LEVELS[rec.level]));
@@ -633,17 +634,66 @@ function renderList(){
     box.appendChild(b);
   });
 }
-function renderDetail(id){
-  const rec = loadH().find(x => x.id === id); if (!rec) return renderList();
+
+// ---- Share history ----
+function recText(rec){
+  const ln = [NAMES[rec.persona] + " (" + LEVELS[rec.level] + ") · " + scoreOf(rec.feedback), new Date(rec.ts).toLocaleString() + " · " + fmtDur(rec.dur)];
+  if (rec.prop) ln.push("Property: " + rec.prop);
+  ln.push("", "FEEDBACK", rec.feedback || "(no feedback)", "", "TRANSCRIPT");
+  rec.msgs.filter(m => !m.hidden).forEach(m => ln.push((m.role === "user" ? "Caller: " : "Customer: ") + m.text));
+  return ln.join("\n");
+}
+async function packRec(rec){
+  const bytes = new TextEncoder().encode(JSON.stringify({p:rec.persona,l:rec.level,t:rec.ts,d:rec.dur,pr:rec.prop,f:rec.feedback,m:rec.msgs.filter(m => !m.hidden).map(m => [m.role === "user" ? "u" : "c", m.text])}));
+  let out = bytes, pre = "r";
+  if (window.CompressionStream) { out = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer()); pre = "g"; }
+  let s = ""; out.forEach(b => s += String.fromCharCode(b));
+  return pre + btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+async function unpackRec(str){
+  const bin = atob(str.slice(1).replace(/-/g,"+").replace(/_/g,"/")), bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  const txt = str[0] === "g" ? await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text() : new TextDecoder().decode(bytes);
+  const o = JSON.parse(txt);
+  if (!NAMES[o.p] || !LEVELS[o.l]) throw new Error("bad data");
+  return {id:0, ts:o.t, persona:o.p, level:o.l, dur:o.d, prop:o.pr, feedback:o.f, msgs:o.m.map(x => ({role: x[0] === "u" ? "user" : "model", text: String(x[1])}))};
+}
+async function copyText(t){ try { await navigator.clipboard.writeText(t); return true; } catch { return false; } }
+function dl(name, text){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type:"text/plain"})); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+function shareBar(rec){
+  const bar = el("div","row"), msg = el("div","sub","");
+  const mk = (t, f) => { const b = el("button","ghost",t); b.onclick = f; bar.appendChild(b); };
+  mk("Share link", async () => {
+    try { const url = location.origin + "/#share=" + await packRec(rec);
+      if (navigator.share) { try { await navigator.share({title:"Cold call practice", text:"My cold call practice and feedback", url}); return; } catch (e) { if (e.name === "AbortError") return; } }
+      msg.textContent = (await copyText(url)) ? "Link copied. Anyone with it can read this call (no account needed)." : "Couldn't copy. Use Copy text instead.";
+    } catch (e) { msg.textContent = "Couldn't create link: " + e.message; }
+  });
+  mk("Copy text", async () => { msg.textContent = (await copyText(recText(rec))) ? "Copied." : "Couldn't copy."; });
+  mk("Download .txt", () => dl("cold-call-" + NAMES[rec.persona] + "-" + new Date(rec.ts).toISOString().slice(0,10) + ".txt", recText(rec)));
+  const w = el("div"); w.appendChild(bar); w.appendChild(msg); return w;
+}
+async function openShared(){
+  const m = location.hash.match(/^#share=(.+)$/); if (!m) return;
+  try {
+    const rec = await unpackRec(m[1]);
+    ["setup","call","fb","again"].forEach(id => $(id).style.display = "none");
+    $("hist").style.display = "block"; $("hlist").style.display = "none"; $("hClear").style.display = "none";
+    $("hBack").textContent = "Open practice app"; $("hBack").onclick = () => { location.href = location.pathname; };
+    renderDetail(0, rec);
+  } catch { alert("This shared link is invalid or incomplete."); }
+}
+function renderDetail(id, shared){
+  const rec = shared || loadH().find(x => x.id === id); if (!rec) return renderList();
   $("hlist").style.display = "none"; $("hClear").style.display = "none";
   const d = $("hdet"); d.style.display = "block"; d.textContent = "";
-  const back = el("button", "ghost", "← All calls"); back.onclick = renderList; d.appendChild(back);
+  if (shared) d.appendChild(el("div","sub","Shared call (read-only)")); else { const back = el("button", "ghost", "← All calls"); back.onclick = renderList; d.appendChild(back); }
   d.appendChild(el("h3", "", NAMES[rec.persona] + " (" + LEVELS[rec.level] + ") · " + scoreOf(rec.feedback)));
   d.appendChild(el("div", "sub", new Date(rec.ts).toLocaleString() + " · " + fmtDur(rec.dur)));
   if (rec.prop) d.appendChild(el("div", "sub", rec.prop));
+  d.appendChild(shareBar(rec));
   d.appendChild(el("h3", "", "Feedback"));
   const fb = el("div", "txt", rec.feedback || "No feedback saved for this call."); d.appendChild(fb);
-  if (!rec.feedback) {
+  if (!rec.feedback && !shared) {
     const r = el("button", "ghost", "Get feedback"); r.style.marginTop = "8px";
     r.onclick = async () => {
       fb.textContent = "Analyzing your call…"; r.disabled = true;
@@ -656,10 +706,12 @@ function renderDetail(id){
   const tr = el("div", "tr");
   rec.msgs.filter(m => !m.hidden).forEach(m => tr.appendChild(el("div", "m " + (m.role === "user" ? "u" : "c"), m.text)));
   d.appendChild(tr);
+  if (shared) return;
   const del = el("button", "end", "Delete this call"); del.style.marginTop = "16px";
   del.onclick = () => { if (confirm("Delete this call?")) { saveH(loadH().filter(x => x.id !== rec.id)); renderList(); } };
   d.appendChild(del);
 }
+openShared();
 $("histOpen").onclick = showHistory;
 $("histOpen2").onclick = showHistory;
 $("hBack").onclick = () => location.reload();
