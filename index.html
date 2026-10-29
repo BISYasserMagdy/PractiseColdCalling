@@ -155,12 +155,13 @@ h3{margin:16px 0 6px;font-size:16px}
       <option value="hard">Hard</option>
     </select>
     <button class="go" id="start">Start call</button>
-    <button class="ghost" id="opsOpen" style="width:100%;margin-top:10px">My openings (write and save)</button>
+    <button class="ghost" id="opsOpen" style="width:100%;margin-top:10px">My openings (jump to list below)</button>
     <a class="ghost" href="/course.html" style="display:block;text-align:center;text-decoration:none;border-radius:10px;padding:13px 18px;font-weight:600;margin-top:10px;background:#e6ebf0;color:var(--ink)">Course: start from zero</a>
     <button class="ghost" id="guideOpen" style="width:100%;margin-top:10px">Guide: learn cold calling</button>
     <button class="ghost" id="histOpen" style="width:100%;margin-top:10px">History</button>
     <button class="install" id="install">Install as app</button>
     <div class="hint" id="iosHint">To install on iPhone: tap Share, then "Add to Home Screen".</div>
+    <div id="homeOps" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)"></div>
   </section>
 
   <section id="call">
@@ -524,12 +525,14 @@ const OKEY = "cc_openings_v1";
 const OTYPES = {general:"General", fsbo:"FSBO", expired:"Expired", busy:"Busy", hasagent:"Has an agent", hesitant:"Hesitant", notint:"Not interested", investor:"Investor"};
 function loadO(){ try { return JSON.parse(localStorage.getItem(OKEY)) || []; } catch { return []; } }
 function saveO(a){ try { localStorage.setItem(OKEY, JSON.stringify(a)); } catch {} }
-function addOpening(type, title, text){ const a = loadO(); a.unshift({id: Date.now(), type, title, text}); saveO(a); }
+function addOpening(type, title, text){ const a = loadO(); a.unshift({id: Date.now(), type, title, text}); saveO(a); refreshOps(); }
 let oEdit = null, oFilter = "all";
-function renderOps(){
-  const s = $("osheet"); s.textContent = "";
-  const hd = el("div","gh"); hd.appendChild(el("h2","","My openings"));
-  const x = el("button","ghost","Close"); x.onclick = closeOps; hd.appendChild(x); s.appendChild(hd);
+function refreshOps(){ renderOps($("osheet"), true); renderOps($("homeOps"), false); }
+function renderOps(s, overlay){
+  s.textContent = "";
+  if (overlay) { const hd = el("div","gh"); hd.appendChild(el("h2","","My openings"));
+    const x = el("button","ghost","Close"); x.onclick = closeOps; hd.appendChild(x); s.appendChild(hd); }
+  else s.appendChild(el("h3","","My openings"));
   const all = loadO(), cur = all.find(o => o.id === oEdit);
   const f = el("div","oform");
   const sel = document.createElement("select"); Object.keys(OTYPES).forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = OTYPES[k]; sel.appendChild(o); });
@@ -542,29 +545,31 @@ function renderOps(){
     const a = loadO();
     if (cur) { const o = a.find(z => z.id === cur.id); if (o) { o.type = sel.value; o.title = ti.value.trim(); o.text = text; } }
     else a.unshift({id: Date.now(), type: sel.value, title: ti.value.trim(), text});
-    saveO(a); oEdit = null; renderOps();
+    saveO(a); oEdit = null; refreshOps();
   };
   f.append(sel, ti, tx, sv);
-  if (cur) { const c = el("button","ghost","Cancel"); c.style.marginLeft = "8px"; c.onclick = () => { oEdit = null; renderOps(); }; f.appendChild(c); }
+  if (cur) { const c = el("button","ghost","Cancel"); c.style.marginLeft = "8px"; c.onclick = () => { oEdit = null; refreshOps(); }; f.appendChild(c); }
   s.appendChild(f);
   const fl = document.createElement("select"); fl.style.cssText = "margin:12px 0 4px;padding:8px;border-radius:8px;border:1px solid var(--line)";
   [["all","All types"]].concat(Object.entries(OTYPES)).forEach(([k,v]) => { const o = document.createElement("option"); o.value = k; o.textContent = v; fl.appendChild(o); });
-  fl.value = oFilter; fl.onchange = () => { oFilter = fl.value; renderOps(); }; s.appendChild(fl);
+  fl.value = oFilter; fl.onchange = () => { oFilter = fl.value; refreshOps(); }; s.appendChild(fl);
   const list = all.filter(o => oFilter === "all" || o.type === oFilter);
-  if (!list.length) s.appendChild(el("p","sub","No saved openings yet. Write one above, or save the suggested opener from the property page."));
+  if (!list.length) s.appendChild(el("p","sub","No saved openings yet. Write one above, or save the suggested opener from the property page. Saved openings show here."));
   list.forEach(o => {
     const c = el("div","oc"); c.appendChild(el("div","ot", OTYPES[o.type] + (o.title ? " · " + o.title : "")));
     c.appendChild(el("p","", o.text));
-    const e = el("button","ghost","Edit"); e.onclick = () => { oEdit = o.id; renderOps(); $("ops").scrollTop = 0; };
+    const e = el("button","ghost","Edit"); e.onclick = () => { oEdit = o.id; refreshOps(); if (overlay) $("ops").scrollTop = 0; else s.scrollIntoView({behavior:"smooth"}); };
     const cp = el("button","ghost","Copy"); cp.onclick = async () => { cp.textContent = (await copyText(o.text)) ? "Copied" : "Couldn't copy"; setTimeout(() => cp.textContent = "Copy", 1500); };
     const u = el("button","ghost","Use in call"); u.onclick = () => { $("txt").value = o.text; closeOps(); $("txt").focus(); };
-    const d = el("button","end","Delete"); d.onclick = () => { if (confirm("Delete this opening?")) { saveO(loadO().filter(z => z.id !== o.id)); renderOps(); } };
-    c.append(e, cp, u, d); s.appendChild(c);
+    const inCall = $("call").style.display === "grid";
+    const d = el("button","end","Delete"); d.onclick = () => { if (confirm("Delete this opening?")) { saveO(loadO().filter(z => z.id !== o.id)); refreshOps(); } };
+    c.append(e, cp); if (inCall) c.appendChild(u); c.appendChild(d); s.appendChild(c);
   });
 }
-function openOps(){ oEdit = null; renderOps(); $("ops").style.display = "block"; $("ops").scrollTop = 0; }
+function openOps(){ oEdit = null; refreshOps(); $("ops").style.display = "block"; $("ops").scrollTop = 0; }
 function closeOps(){ $("ops").style.display = "none"; }
-$("opsOpen").onclick = openOps; $("opsOpen2").onclick = openOps;
+$("opsOpen").onclick = () => { $("homeOps").scrollIntoView({behavior:"smooth"}); }; $("opsOpen2").onclick = openOps;
+refreshOps();
 $("ops").onclick = e => { if (e.target === $("ops")) closeOps(); };
 
 function openGuide(){ renderGuide(); $("guide").style.display = "block"; $("guide").scrollTop = 0; }
